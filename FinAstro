@@ -1,0 +1,1486 @@
+import pandas as pd
+import ephem
+import math
+
+# Define Nakshatra boundaries with rulership and suggested weights
+NAKSHATRAS = [
+    {"Name": "Ashwini", "Start": 0, "End": 13.3333, "Ruler": "Ketu", "Weight": 1.3, "Trend": "Bullish"},
+    {"Name": "Bharani", "Start": 13.3333, "End": 26.6667, "Ruler": "Venus", "Weight": 0.9, "Trend": "Bullish"},
+    {"Name": "Krittika", "Start": 26.6667, "End": 40.0, "Ruler": "Sun", "Weight": 0.7, "Trend": "Bullish"},
+    {"Name": "Rohini", "Start": 40.0, "End": 53.3333, "Ruler": "Moon", "Weight": 3.5, "Trend": "Strong Bullish"},
+    {"Name": "Mrigashira", "Start": 53.3333, "End": 66.6667, "Ruler": "Mars", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Ardra", "Start": 66.6667, "End": 80.0, "Ruler": "Rahu", "Weight": 0.5, "Trend": "Strong Bearish"},
+    {"Name": "Punarvasu", "Start": 80.0, "End": 93.3333, "Ruler": "Jupiter", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Pushya", "Start": 93.3333, "End": 106.6667, "Ruler": "Saturn", "Weight": 4.0, "Trend": "Strong Bullish"},
+    {"Name": "Ashlesha", "Start": 106.6667, "End": 120.0, "Ruler": "Mercury", "Weight": 1.1, "Trend": "Bearish"},
+    {"Name": "Magha", "Start": 120.0, "End": 133.3333, "Ruler": "Ketu", "Weight": 0.5, "Trend": "Slightly Bullish"},
+    {"Name": "Purva Phalguni", "Start": 133.3333, "End": 146.6667, "Ruler": "Venus", "Weight": 1.2, "Trend": "Bullish"},
+    {"Name": "Uttara Phalguni", "Start": 146.6667, "End": 160.0, "Ruler": "Sun", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Hasta", "Start": 160.0, "End": 173.3333, "Ruler": "Moon", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Chitra", "Start": 173.3333, "End": 186.6667, "Ruler": "Mars", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Swati", "Start": 186.6667, "End": 200.0, "Ruler": "Rahu", "Weight": 0.4, "Trend": "Slightly Bearish"},
+    {"Name": "Vishakha", "Start": 200.0, "End": 213.3333, "Ruler": "Jupiter", "Weight": 0.3, "Trend": "Mild Bullish"},
+    {"Name": "Anuradha", "Start": 213.3333, "End": 226.6667, "Ruler": "Saturn", "Weight": 2.0, "Trend": "Strong Bullish"},
+    {"Name": "Jyeshtha", "Start": 226.6667, "End": 240.0, "Ruler": "Mercury", "Weight": 1.3, "Trend": "Bearish"},
+    {"Name": "Moola", "Start": 240.0, "End": 253.3333, "Ruler": "Ketu", "Weight": 1.7, "Trend": "Strong Bearish"},
+    {"Name": "Purva Ashadha", "Start": 253.3333, "End": 266.6667, "Ruler": "Venus", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Uttara Ashadha", "Start": 266.6667, "End": 280.0, "Ruler": "Sun", "Weight": 1.7, "Trend": "Bullish"},
+    {"Name": "Shravana", "Start": 280.0, "End": 293.3333, "Ruler": "Moon", "Weight": 3.3, "Trend": "Strong Bullish"},
+    {"Name": "Dhanishta", "Start": 293.3333, "End": 306.6667, "Ruler": "Mars", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Shatabhisha", "Start": 306.6667, "End": 320.0, "Ruler": "Rahu", "Weight": 1.5, "Trend": "Bearish"},
+    {"Name": "Purva Bhadrapada", "Start": 320.0, "End": 333.3333, "Ruler": "Jupiter", "Weight": 0.5, "Trend": "Mild Bullish"},
+    {"Name": "Uttara Bhadrapada", "Start": 333.3333, "End": 346.6667, "Ruler": "Saturn", "Weight": 0.9, "Trend": "Mild Bullish"},
+    {"Name": "Revati", "Start": 346.6667, "End": 360.0, "Ruler": "Mercury", "Weight": 1.3, "Trend": "Bullish"}
+]
+
+# Tara Bala weights
+TARA_BALA_WEIGHTS = {
+    1: ("Janma Tara", +0.1),
+    2: ("Sampat Tara", +0.3),
+    3: ("Vipat Tara", -0.3),
+    4: ("Kshema Tara", +0.4),
+    5: ("Pratyari Tara", -0.4),
+    6: ("Sadhana Tara", +0.5),
+    7: ("Naidhana Tara", -0.5),
+    8: ("Mitra Tara", +0.3),
+    9: ("Parama Mitra Tara", +0.5),
+}
+
+HOUSE_WEIGHTS = {
+    1: +0.4,  # Trikona/Kendra
+    2: +0.2,  # Wealth/Maraka
+    3: -0.1,  # Upachaya/Malefic
+    4: +0.3,  # Kendra
+    5: +0.5,  # Trikona
+    6: -0.3,  # Trik
+    7: +0.2,  # Kendra/Maraka
+    8: -0.4,  # Trik/Malefic
+    9: +0.5,  # Trikona
+    10: +0.4,  # Kendra
+    11: +0.1,  # Upachaya
+    12: -0.4,  # Trik/Malefic
+}
+
+
+NAKSHATRA_PADA_NAVAMSA = [
+    ["Aries", "Taurus", "Gemini", "Cancer"],        # Ashwini
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Bharani
+    ["Sagittarius", "Capricorn", "Aquarius", "Pisces"],  # Krittika
+    ["Taurus", "Gemini", "Cancer", "Leo"],          # Rohini
+    ["Virgo", "Libra", "Scorpio", "Sagittarius"],   # Mrigashira
+    ["Capricorn", "Aquarius", "Pisces", "Aries"],   # Ardra
+    ["Cancer", "Leo", "Virgo", "Libra"],            # Punarvasu
+    ["Scorpio", "Sagittarius", "Capricorn", "Aquarius"], # Pushya
+    ["Pisces", "Aries", "Taurus", "Gemini"],        # Ashlesha
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Magha
+    ["Sagittarius", "Capricorn", "Aquarius", "Pisces"],  # Purva Phalguni
+    ["Aries", "Taurus", "Gemini", "Cancer"],        # Uttara Phalguni
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Hasta
+    ["Sagittarius", "Capricorn", "Aquarius", "Pisces"],  # Chitra
+    ["Taurus", "Gemini", "Cancer", "Leo"],          # Swati
+    ["Virgo", "Libra", "Scorpio", "Sagittarius"],   # Vishakha
+    ["Capricorn", "Aquarius", "Pisces", "Aries"],   # Anuradha
+    ["Cancer", "Leo", "Virgo", "Libra"],            # Jyeshtha
+    ["Scorpio", "Sagittarius", "Capricorn", "Aquarius"], # Moola
+    ["Pisces", "Aries", "Taurus", "Gemini"],        # Purva Ashadha
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Uttara Ashadha
+    ["Sagittarius", "Capricorn", "Aquarius", "Pisces"],  # Shravana
+    ["Aries", "Taurus", "Gemini", "Cancer"],        # Dhanishta
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Shatabhisha
+    ["Sagittarius", "Capricorn", "Aquarius", "Pisces"],  # Purva Bhadrapada
+    ["Aries", "Taurus", "Gemini", "Cancer"],        # Uttara Bhadrapada
+    ["Leo", "Virgo", "Libra", "Scorpio"],           # Revati
+]
+
+PADA_WEIGHTS = {
+    "Exalted": +0.5,
+    "Debilitated": -0.5,
+    "Own Sign": +0.3,
+    "Moolatrikona": +0.4,
+    "Friendly Sign": +0.2,
+    "Neutral": +0.0,
+    "Enemy Sign": -0.2
+}
+
+
+# Dignity logic
+# Define planet dignity information
+PLANET_DIGNITY = {
+    "Mercury": {
+        "Exalted": ["Virgo"],
+        "Debilitated": ["Pisces"],
+        "Own Sign": ["Gemini", "Virgo"],
+        "Moolatrikona": ["Virgo"],  # Root Trine for Mercury
+        "Friendly": ["Taurus", "Libra"],
+        "Enemy": ["Pisces", "Sagittarius"],
+    },
+    "Mars": {
+        "Exalted": ["Capricorn"],
+        "Debilitated": ["Cancer"],
+        "Own Sign": ["Aries", "Scorpio"],
+        "Moolatrikona": ["Aries"],
+        "Friendly": ["Leo", "Sagittarius"],
+        "Enemy": ["Cancer", "Libra"],
+    },
+    "Venus": {
+        "Exalted": ["Pisces"],
+        "Debilitated": ["Virgo"],
+        "Own Sign": ["Taurus", "Libra"],
+        "Moolatrikona": ["Libra"],
+        "Friendly": ["Capricorn", "Aquarius"],
+        "Enemy": ["Aries", "Scorpio"],
+    },
+    "Moon": {
+        "Exalted": ["Taurus"],
+        "Debilitated": ["Scorpio"],
+        "Own Sign": ["Cancer"],
+        "Moolatrikona": ["Cancer"],
+        "Friendly": ["Pisces", "Scorpio"],
+        "Enemy": ["Capricorn"],
+    }
+    # Add definitions for other planets as needed
+
+}
+
+# Define planetary rulers of the zodiac signs
+ZODIAC_RULERS = {
+    "Aries": "Mars",
+    "Taurus": "Venus",
+    "Gemini": "Mercury",
+    "Cancer": "Moon",
+    "Leo": "Sun",
+    "Virgo": "Mercury",
+    "Libra": "Venus",
+    "Scorpio": "Mars",
+    "Sagittarius": "Jupiter",
+    "Capricorn": "Saturn",
+    "Aquarius": "Saturn",
+    "Pisces": "Jupiter",
+}
+
+ZODIAC_SIGNS = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+]
+
+FIXED_STARS = [
+    {"Name": "Spica", "Longitude": 180.0, "Influence": "+0.5 (Benefic)"},
+    {"Name": "Antares", "Longitude": 248.0, "Influence": "-0.5 (Malefic)"},
+    {"Name": "Aldebaran", "Longitude": 68.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Regulus", "Longitude": 120.0, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Algol", "Longitude": 65.5, "Influence": "-0.7 (Malefic)"},
+    {"Name": "Sirius", "Longitude": 101.5, "Influence": "+0.5 (Benefic)"},
+    {"Name": "Vega", "Longitude": 281.5, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Betelgeuse", "Longitude": 88.0, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Capella", "Longitude": 79.0, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Altair", "Longitude": 300.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Deneb", "Longitude": 304.5, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Fomalhaut", "Longitude": 336.0, "Influence": "+0.5 (Benefic)"},
+    {"Name": "Pollux", "Longitude": 113.0, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Procyon", "Longitude": 115.5, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Arcturus", "Longitude": 206.5, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Bellatrix", "Longitude": 86.0, "Influence": "-0.2 (Neutral)"},
+    {"Name": "Castor", "Longitude": 111.0, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Pleiades", "Longitude": 60.0, "Influence": "-0.3 (Malefic)"},
+    {"Name": "Alcyone", "Longitude": 60.0, "Influence": "-0.4 (Malefic)"},
+    {"Name": "Canopus", "Longitude": 226.5, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Alnilam", "Longitude": 84.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Mintaka", "Longitude": 82.5, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Rigel", "Longitude": 79.0, "Influence": "+0.4 (Benefic)"},
+    {"Name": "Denebola", "Longitude": 175.0, "Influence": "-0.2 (Neutral)"},
+    {"Name": "Zubenelgenubi", "Longitude": 186.5, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Zubeneschamali", "Longitude": 193.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Shaula", "Longitude": 245.0, "Influence": "-0.4 (Malefic)"},
+    {"Name": "Achernar", "Longitude": 335.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Markab", "Longitude": 346.0, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Alphecca", "Longitude": 227.0, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Peacock", "Longitude": 280.0, "Influence": "+0.2 (Neutral)"},
+    {"Name": "Ras Alhague", "Longitude": 240.0, "Influence": "-0.3 (Malefic)"},
+    {"Name": "Sadalsuud", "Longitude": 312.5, "Influence": "+0.3 (Benefic)"},
+    {"Name": "Algorab", "Longitude": 197.5, "Influence": "-0.4 (Malefic)"},
+    {"Name": "Alcyone", "Longitude": 60.0, "Influence": "-0.4 (Malefic)"},
+]
+
+
+# Drishti rules for all planets, including Rahu and Ketu
+DRISHTI_RULES = {
+    "Jupiter": [5, 7, 9],  # Jupiter aspects 5th, 7th, and 9th houses
+    "Mars": [4, 7, 8],     # Mars aspects 4th, 7th, and 8th houses
+    "Saturn": [3, 7, 10],  # Saturn aspects 3rd, 7th, and 10th houses
+    "Mercury": [7],        # Full aspect on the 7th house
+    "Venus": [7],          # Full aspect on the 7th house
+    "Moon": [7],           # Full aspect on the 7th house
+    "Sun": [7],            # Full aspect on the 7th house
+    "Rahu": [5, 7, 9],     # Rahu aspects 5th, 7th, and 9th houses
+    "Ketu": [5, 7, 9],     # Ketu aspects 5th, 7th, and 9th houses
+}
+
+
+# Define Benefic and Malefic Planets
+BENEFIC_PLANETS = ["Jupiter", "Venus", "Mercury", "Moon"]
+MALEFIC_PLANETS = ["Mars", "Saturn", "Rahu", "Ketu"]
+
+# Define Drishti Weights
+DRISHTI_WEIGHTS = {
+    "Benefic": +0.3,
+    "Malefic": -0.3
+}
+
+def calculate_ascendant(observer):
+    """
+    Calculate the sidereal longitude of the ascendant dynamically.
+    :param observer: ephem.Observer object with date, latitude, and longitude set.
+    :return: Sidereal longitude of the ascendant in degrees.
+    """
+    # Calculate the tropical ascendant
+    tropical_ascendant = math.degrees(observer.sidereal_time() - observer.lon) % 360
+
+    # Apply Lahiri Ayanamsa correction to convert to sidereal
+    ayanamsa = 24.0 + (observer.date.tuple()[0] - 2000) * 0.014  # Approximation for Lahiri
+    sidereal_ascendant = (tropical_ascendant - ayanamsa) % 360
+    return sidereal_ascendant
+
+
+def calculate_drishti_aspects(observer, planets, planet_name, ascendant_longitude, orb=5.0):
+    """
+    Calculate Vedic Drishti (aspects) for a given planet.
+    
+    Parameters:
+        observer (ephem.Observer): Observer object for calculations.
+        planets (dict): Dictionary of ephem planetary objects.
+        planet_name (str): Name of the planet for which Drishti is calculated.
+        ascendant_longitude (float): Ascendant's sidereal longitude.
+        orb (float): Allowable orb for aspect influences in degrees.
+        
+    Returns:
+        dict: Drishti aspects with weights (benefic/malefic).
+    """
+    if planet_name not in DRISHTI_RULES:
+        return {}  # Return empty if the planet has no specific Drishti rules
+
+    # Get the planet's sidereal longitude
+    if planet_name in ["Rahu", "Ketu"]:
+        planet_longitude = calculate_rahu_ketu(observer)[0 if planet_name == "Rahu" else 1]
+    else:
+        planet = planets[planet_name]
+        planet.compute(observer)
+        planet_longitude = calculate_sidereal_longitude(observer, planet)
+
+    # Calculate the planet's house
+    planet_house = calculate_house(planet_longitude, ascendant_longitude)
+
+    # Precompute all planets' houses
+    planet_houses = {
+        pname: calculate_house(calculate_sidereal_longitude(observer, p_obj), ascendant_longitude)
+        for pname, p_obj in planets.items()
+    }
+
+    # Initialize Drishti aspects
+    drishti_aspects = {}
+
+    # Iterate through the Drishti rules for the planet
+    for drishti in DRISHTI_RULES[planet_name]:
+        # Calculate the influenced house
+        influenced_house = (planet_house + drishti - 1) % 12 + 1  # Wrap around the 12 houses
+
+        # Identify planets in the influenced house
+        for influenced_planet, influenced_house_calc in planet_houses.items():
+            if influenced_house == influenced_house_calc:
+                # Check if the influenced planet is within orb
+                influenced_longitude = calculate_sidereal_longitude(observer, planets[influenced_planet])
+                angular_diff = abs((planet_longitude - influenced_longitude + 360) % 360)
+                if angular_diff > 180:
+                    angular_diff = 360 - angular_diff
+                if angular_diff <= orb:
+                    # Determine influence type and weight
+                    influence_type = "Benefic" if planet_name in BENEFIC_PLANETS else "Malefic"
+                    weight = DRISHTI_WEIGHTS[influence_type]
+                    drishti_aspects[influenced_planet] = {
+                        "House": influenced_house,
+                        "Influence": influence_type,
+                        "Weight": weight,
+                    }
+
+    return drishti_aspects
+
+
+
+
+def calculate_functional_status_weight_and_update(house, placement_house, associations):
+    """
+    Calculate the functional status weight of a planet based on its house rulership,
+    placement, and associations with other planets.
+    Updates the weight and the corresponding description (e.g., Benefic, Neutral, Malefic, etc.).
+    :param house: The house ruled by the planet.
+    :param placement_house: The house where the planet is placed.
+    :param associations: List of planets associated with the target planet through aspects.
+    :return: Functional Status weight (float) and description (str).
+    """
+    # Initialize weight and status
+    weight = 0.0
+    status = "Neutral"
+
+    # Functional Benefic
+    if house in [1, 5, 9]:  # Rules trine houses
+        weight += 0.5
+        status = "Benefic"
+    if placement_house in [1, 5, 9]:  # Placed in benefic houses
+        weight += 0.3
+
+    # Neutral
+    if house in [2, 3, 7, 11] and placement_house in [2, 3, 7, 11]:
+        weight += 0.0
+        status = "Neutral"
+
+    # Functional Malefic
+    if house in [6, 8, 12]:  # Rules trik houses
+        weight -= 0.5
+        status = "Malefic"
+    if placement_house in [6, 8, 12]:  # Placed in malefic houses
+        weight -= 0.3
+
+    # Maraka (Death-inflicting)
+    if house in [2, 7]:  # Rules maraka houses
+        weight -= 0.4
+        status = "Maraka"
+
+    # Mixed rulership (benefic and malefic houses)
+    if house in [5, 8]:  # Example of mixed rulership
+        weight += 0.2 if house == 5 else -0.2  # Adjust based on prominence
+
+    # Associations (benefic or malefic aspects)
+    for planet in associations:
+        if planet in ["Jupiter", "Venus"]:  # Associated with benefic planets
+            weight += 0.2
+        if planet in ["Saturn", "Mars", "Rahu", "Ketu"]:  # Associated with malefic planets
+            weight -= 0.2
+
+    # Return weight and status as a formatted string
+    return f"({weight:+.1f}) ({status})"
+
+
+
+def get_house_weighting(house):
+    """
+    Get the weighting for a given house based on the HOUSE_WEIGHTS dictionary.
+    :param house: The house number (1-12)
+    :return: A tuple of the weighting and house label.
+    """
+    weight = HOUSE_WEIGHTS.get(house, 0.0)  # Default to 0.0 if house is not found
+    return f"{weight:+.1f} [House {house}]"
+
+
+def calculate_rahu_ketu(observer):
+    """
+    Calculate the sidereal longitude and house placement for Rahu (North Node) and Ketu (South Node).
+    """
+    julian_date = ephem.julian_date(observer.date)
+    mean_node_longitude = (125.04452 - 1934.136261 * (julian_date - 2451545.0) / 36525) % 360
+    rahu_longitude = mean_node_longitude % 360  # Sidereal longitude of Rahu
+    ketu_longitude = (rahu_longitude + 180) % 360  # Ketu is always opposite Rahu
+    return rahu_longitude, ketu_longitude
+
+def calculate_rahu_ketu_houses(observer, ascendant_longitude):
+    """
+    Calculate the house placement of Rahu and Ketu based on their sidereal longitude.
+    """
+    # Calculate Rahu and Ketu longitudes
+    rahu_longitude, ketu_longitude = calculate_rahu_ketu(observer)
+    rahu_house = calculate_house(rahu_longitude, ascendant_longitude)
+    ketu_house = calculate_house(ketu_longitude, ascendant_longitude)
+    return {
+        "Rahu": {"Sidereal Longitude": rahu_longitude, "House Placement": rahu_house},
+        "Ketu": {"Sidereal Longitude": ketu_longitude, "House Placement": ketu_house},
+    }
+
+
+def calculate_house(planet_longitude, ascendant_longitude):
+    """
+    Calculate the house placement of a planet based on its longitude and the ascendant.
+    """
+    # Adjust for the zodiac cycle
+    relative_longitude = (planet_longitude - ascendant_longitude + 360) % 360
+    house = int(relative_longitude // 30) + 1  # Divide by 30° per house
+    return house
+
+def determine_house_lord(house, ascendant_longitude):
+    """
+    Determine the house lord of the given house.
+    """
+    # Find the starting degree of the house
+    house_start = (ascendant_longitude + (house - 1) * 30) % 360
+    house_sign = ZODIAC_SIGNS[int(house_start // 30)]  # Determine zodiac sign
+    return ZODIAC_RULERS[house_sign]
+
+
+
+# Example: Calculate house placement and lord
+def calculate_planet_houses(observer, planets, ascendant_longitude):
+    """
+    Calculate the house placement and house lord for planets.
+    """
+    results = {}
+    for planet_name, planet in planets.items():
+        # Calculate sidereal longitude
+        sidereal_longitude = calculate_sidereal_longitude(observer, planet)
+
+        # Determine house placement
+        house = calculate_house(sidereal_longitude, ascendant_longitude)
+
+        # Find house lord
+        house_lord = determine_house_lord(house, ascendant_longitude)
+
+        # Store results
+        results[planet_name] = {
+            "Sidereal Longitude": sidereal_longitude,
+            "House Placement": house,
+            "House Lord": house_lord,
+        }
+    return results
+
+# Example usage:
+# Assuming sidereal ascendant longitude (adjust per actual data)
+ascendant_longitude = 100.0  # Example ascendant longitude in degrees
+
+# Define natal observer
+natal_observer = ephem.Observer()
+natal_observer.lat, natal_observer.lon = "40.7128", "-74.0060"
+natal_observer.date = "1957-03-04"
+
+# Calculate natal ascendant
+natal_ascendant = calculate_ascendant(natal_observer)
+print(f"Natal Ascendant: {natal_ascendant:.2f}°")  # Debugging output
+
+# Define transit observer
+transit_observer = ephem.Observer()
+transit_observer.lat, transit_observer.lon = "40.7128", "-74.0060"
+transit_observer.date = "2025-03-26"  # Example analysis date
+
+# Use precomputed natal ascendant
+natal_ascendant = calculate_ascendant(natal_observer)
+
+planets = {
+    "Moon": ephem.Moon(),
+    "Mercury": ephem.Mercury(),
+    "Mars": ephem.Mars(),
+    "Venus": ephem.Venus(),
+    "Sun": ephem.Sun(),
+}
+
+def calculate_sidereal_longitude(observer, planet):
+    """
+    Compute the sidereal longitude of a planet.
+    :param observer: Ephem observer object.
+    :param planet: Ephem planet object.
+    :return: Sidereal longitude in degrees.
+    """
+    # Compute tropical longitude
+    planet.compute(observer)
+    longitude = math.degrees(planet.hlon) % 360
+    
+    # Apply Lahiri Ayanamsa correction
+    ayanamsa = 24.0 + (observer.date.tuple()[0] - 2000) * 0.014  # Approximation for Lahiri
+    sidereal_longitude = (longitude - ayanamsa) % 360
+    return sidereal_longitude
+
+
+# --- Functions for Dignity and Nakshatra-Pada Calculations ---
+def determine_dignity(planet, sign):
+    dignities = PLANET_DIGNITY.get(planet, {})
+    if sign in dignities.get("Exalted", []):
+        return "Exalted", PADA_WEIGHTS["Exalted"]
+    elif sign in dignities.get("Debilitated", []):
+        return "Debilitated", PADA_WEIGHTS["Debilitated"]
+    elif sign in dignities.get("Own Sign", []):
+        return "Own Sign", PADA_WEIGHTS["Own Sign"]
+    elif sign in dignities.get("Moolatrikona", []):
+        return "Moolatrikona", PADA_WEIGHTS["Moolatrikona"]
+    elif sign in dignities.get("Friendly", []):
+        return "Friendly Sign", PADA_WEIGHTS["Friendly Sign"]
+    elif sign in dignities.get("Enemy", []):
+        return "Enemy Sign", PADA_WEIGHTS["Enemy Sign"]
+    else:
+        return "Neutral", PADA_WEIGHTS["Neutral"]
+
+def calculate_aspects(observer, planet1, planet2, orb_limit=10.0):
+    """
+    Calculate the aspect between two planets, including orb and whether applying or separating.
+    :param observer: ephem.Observer object
+    :param planet1: First planet ephem object
+    :param planet2: Second planet ephem object
+    :param orb_limit: Maximum allowable orb for aspects
+    :return: Aspect description (e.g., "Trine (3.2°, Applying)"), or "None" if no aspect is present
+    """
+    planet1.compute(observer)
+    planet2.compute(observer)
+    
+    # Calculate the angular difference between the two planets
+    angle = abs((math.degrees(planet1.hlon) - math.degrees(planet2.hlon)) % 360)
+    if angle > 180:
+        angle = 360 - angle  # Normalize to 0-180
+
+    # Define major aspects and their allowable orb
+    aspects = {
+        "Conjunction": 0,
+        "Opposition": 180,
+        "Trine": 120,
+        "Square": 90,
+        "Sextile": 60,
+    }
+
+    # Calculate speeds dynamically
+    speed1 = calculate_speed(observer, planet1)
+    speed2 = calculate_speed(observer, planet2)
+
+    for aspect_name, aspect_angle in aspects.items():
+        orb = abs(angle - aspect_angle)
+        if orb <= orb_limit:  # Check if within orb limit
+            applying = "Applying" if speed1 > speed2 else "Separating"
+            return f"{aspect_name} ({orb:.1f}°, {applying})"
+    
+    return "None"
+
+def calculate_aspectual_context(observer, planets, target_name):
+    """
+    Calculate the aspectual context for a given target (planet or Nakshatra ruler) with all other planets.
+    :param observer: ephem.Observer object
+    :param planets: Dictionary of ephem planet objects
+    :param target_name: Name of the target planet or ruler
+    :return: String representation of aspects
+    """
+    if target_name not in planets:
+        return "None"  # Return "None" if the target is not found
+
+    target_planet = planets[target_name]
+    aspectual_context = []
+
+    for other_name, other_planet in planets.items():
+        if other_name != target_name:  # Exclude self
+            aspect = calculate_aspects(observer, target_planet, other_planet)
+            if aspect != "None":
+                aspectual_context.append(f"{other_name}: {aspect}")
+
+    return ", ".join(aspectual_context) or "None"
+
+def calculate_rulership_aspectual_context(observer, planets, nakshatra_ruler_name, analyzed_planet_name):
+    """
+    Calculate the rulership aspectual context for the Nakshatra ruler with all other planets,
+    excluding the analyzed planet itself.
+    :param observer: ephem.Observer object
+    :param planets: Dictionary of ephem planet objects
+    :param nakshatra_ruler_name: Name of the Nakshatra ruler
+    :param analyzed_planet_name: Name of the analyzed planet (to exclude from calculation)
+    :return: String representation of aspects
+    """
+    if nakshatra_ruler_name not in planets:
+        return "None"  # Return "None" if the ruler is not found
+
+    ruler_planet = planets[nakshatra_ruler_name]
+    aspectual_context = []
+
+    for other_name, other_planet in planets.items():
+        if other_name not in [nakshatra_ruler_name, analyzed_planet_name]:  # Exclude self and the analyzed planet
+            aspect = calculate_aspects(observer, ruler_planet, other_planet)
+            if aspect != "None":
+                aspectual_context.append(f"{other_name}: {aspect}")
+
+    return ", ".join(aspectual_context) or "None"    
+
+def calculate_aspect_weight(aspect, orb, direction, stacking_adjustment=0.0):
+    base_weights = {
+        "Conjunction": +0.2,
+        "Trine": +0.3,
+        "Square": -0.4,
+        "Opposition": -0.4,
+        "Sextile": +0.2,
+    }
+    orb_adjustment = +0.1 if orb < 2 else 0.0 if 2 <= orb <= 6 else -0.5 * base_weights.get(aspect, 0)
+    direction_adjustment = +0.1 if direction == "Applying" else -0.1 if direction == "Separating" else 0.0
+    stacking_adjustment = -0.2 if stacking_adjustment < 0 else stacking_adjustment
+
+    return base_weights.get(aspect, 0) + orb_adjustment + direction_adjustment + stacking_adjustment
+
+def calculate_composite_influence(aspect_list):
+    """
+    Calculate the composite aspectual influence for a planet or ruler.
+    :param aspect_list: List of aspects (e.g., [{"aspect": "Trine", "orb": 1.5, "direction": "Applying"}, ...]).
+    :return: Composite Aspectual Influence score.
+    """
+    composite_score = 0
+    positive_stack = 0
+    negative_stack = 0
+
+    for aspect in aspect_list:
+        weight = calculate_aspect_weight(aspect["aspect"], aspect["orb"], aspect["direction"])
+        composite_score += weight
+        if weight > 0:
+            positive_stack += weight
+        elif weight < 0:
+            negative_stack += weight
+
+    # Apply stacking adjustments
+    if positive_stack > abs(negative_stack):
+        composite_score += +0.2  # Favorable stack
+    elif abs(negative_stack) > positive_stack:
+        composite_score += -0.2  # Challenging stack
+    else:
+        composite_score += +0.1 if positive_stack > 0 else -0.1  # Mixed stack
+
+    return composite_score
+
+def calculate_aspectual_influence(observer, planets, target_name):
+    """
+    Calculate the aspectual influence for a target planet or ruler.
+    :param observer: ephem.Observer object.
+    :param planets: Dictionary of ephem planet objects.
+    :param target_name: Name of the target planet or ruler.
+    :return: Composite Aspectual Influence score.
+    """
+    if target_name not in planets:
+        return 0.0
+
+    target = planets[target_name]
+    aspect_list = []
+
+    for other_name, other_planet in planets.items():
+        if other_name != target_name:
+            aspect_detail = calculate_aspects(observer, target, other_planet)
+            if aspect_detail != "None":
+                # Parse the aspect details
+                aspect_type, orb_direction = aspect_detail.split(" (")
+                orb = float(orb_direction.split("°")[0])
+                direction = orb_direction.split(", ")[1].strip(")")
+                aspect_list.append({"aspect": aspect_type, "orb": orb, "direction": direction})
+
+    return calculate_composite_influence(aspect_list)
+
+
+    # Calculate speeds dynamically
+    speed1 = calculate_speed(observer, planet1)
+    speed2 = calculate_speed(observer, planet2)
+
+    for aspect_name, aspect_angle in aspects.items():
+        orb = abs(angle - aspect_angle)
+        if orb <= orb_limit:  # Check if within orb limit
+            applying = "Applying" if speed1 > speed2 else "Separating"
+            return f"{aspect_name} ({orb:.1f}°, {applying})"
+    
+    return "None"
+
+# Update Nakshatra report generation to include aspects
+
+
+# Function to determine Tara Bala
+def determine_tara_bala(moon_longitude, janma_tara_index):
+    # Determine the current Nakshatra index of the Moon
+    current_nakshatra_index = None
+    for i, nakshatra in enumerate(NAKSHATRAS, start=1):
+        if nakshatra["Start"] <= moon_longitude < nakshatra["End"]:
+            current_nakshatra_index = i
+            break
+
+    if current_nakshatra_index is None:
+        raise ValueError("Invalid Moon longitude for Nakshatra calculation.")
+
+    # Calculate the relative position
+    relative_position = (current_nakshatra_index - janma_tara_index) % 27 or 27
+    tara_category = (relative_position - 1) % 9 + 1
+
+    # Get the Tara type and weight
+    tara_type, weight = TARA_BALA_WEIGHTS[tara_category]
+
+    return f"{weight:+.1f} ({tara_type})"
+
+    # Example usage
+moon_longitude = 261.98  # Example Moon longitude
+janma_tara_index = 22  # Shravana as Janma Tara
+tara_bala = determine_tara_bala(moon_longitude, janma_tara_index)
+print(f"Tara Bala for the Moon: {tara_bala}")
+
+# Function to determine Chandra Bala
+def determine_chandra_bala():
+    # Stub for Chandra Bala calculation
+    return "TBD"
+
+# Define planetary speed for Nakshatra rulers and analyzed planets
+def calculate_ruler_speed(observer, nakshatra_ruler_name):
+    """
+    Calculate the speed of the Nakshatra ruler.
+    """
+    if nakshatra_ruler_name in planets:
+        nakshatra_ruler_planet = planets[nakshatra_ruler_name]
+        speed = calculate_speed(observer, nakshatra_ruler_planet)
+        return calculate_composite_speed(
+            speed=speed,
+            declination=nakshatra_ruler_planet.dec,
+            retrograde=getattr(nakshatra_ruler_planet, "retrograde", False),
+            planetary_type="Inner" if nakshatra_ruler_name in ["Moon", "Mars", "Mercury", "Venus"] else "Outer",
+            planet_name=nakshatra_ruler_name
+        )
+    return 0.0  # Default if Nakshatra ruler is not available
+
+def calculate_composite_speed(
+    speed, declination, retrograde, acceleration=None, proximity=None, synodic_position=None, aspect=None, planetary_type=None, planet_name=None
+):
+    """
+    Calculate the composite speed contribution for a planet based on its motion and context.
+    Parameters:
+        speed (float): Angular speed of the planet in degrees/day.
+        declination (float): Declination of the planet in degrees.
+        retrograde (bool): Whether the planet is in retrograde motion.
+        acceleration (float, optional): Rate of change of speed (positive for acceleration, negative for deceleration).
+        proximity (str, optional): 'Maximum' for proximity to max speed, 'Minimum' for min speed, None otherwise.
+        synodic_position (str, optional): 'Conjunction' or 'Opposition' relative to the Sun.
+        aspect (str, optional): Aspectual influence like 'Trine', 'Square', etc.
+        planetary_type (str, optional): 'Inner' or 'Outer' planet classification.
+        planet_name (str, optional): Name of the planet being evaluated.
+    Returns:
+        float: Composite speed contribution.
+    """
+
+    # Base Speed Weight
+    if speed > 1.2:
+        base_weight = +0.3  # Very Fast
+    elif speed > 0.8:
+        base_weight = +0.2  # Fast
+    elif 0.5 <= speed <= 0.8:
+        base_weight = 0.0  # Normal
+    elif speed < 0.5:
+        base_weight = -0.2  # Slow
+    else:
+        base_weight = -0.3  # Very Slow/Stationary
+
+    # Acceleration/Deceleration Adjustment
+    acceleration_adj = +0.2 if acceleration and acceleration > 0 else -0.2 if acceleration and acceleration < 0 else 0.0
+
+    # Proximity to Orbital Extremes Adjustment
+    proximity_adj = +0.3 if proximity == 'Maximum' else -0.3 if proximity == 'Minimum' else 0.0
+
+    # Stationary Adjustment
+    stationary_adj = +0.5 if speed == 0 and not retrograde else -0.5 if speed == 0 and retrograde else 0.0
+
+    # Synodic Cycle Adjustment
+    synodic_adj = -0.3 if synodic_position == 'Conjunction' else +0.3 if synodic_position == 'Opposition' else 0.0
+
+    # Aspectual Adjustment (Placeholder for future aspect handling logic)
+    aspect_adj = 0.0
+
+    # Declination Adjustment
+    declination_adj = +0.3 if abs(declination) > 27.0 and speed > 1.0 else -0.3 if abs(declination) > 27.0 else 0.0
+
+    # Retrograde Adjustment
+    retrograde_adj = -0.4 if retrograde and speed <= 0.8 else -0.2 if retrograde and speed > 0.8 else 0.0
+
+    # Planetary Type Adjustment
+    if planet_name in ["Moon", "Mars", "Mercury", "Venus"]:
+        planetary_type_adj = +0.2 if speed > 1.2 else -0.2
+    elif planetary_type == "Outer":
+        planetary_type_adj = +0.2 if speed < 0.8 else -0.2
+    else:
+        planetary_type_adj = 0.0
+
+    # Composite Speed Contribution
+    composite_speed = (
+        base_weight
+        + acceleration_adj
+        + proximity_adj
+        + stationary_adj
+        + synodic_adj
+        + aspect_adj
+        + declination_adj
+        + retrograde_adj
+        + planetary_type_adj
+    )
+
+
+
+    return composite_speed
+
+
+
+
+
+# Function to calculate planet speed
+def calculate_speed(observer, planet):
+    """
+    Calculate the apparent angular speed of a planet in degrees per day.
+    Handles both direct and retrograde motion.
+    :param observer: ephem.Observer object
+    :param planet: ephem planet object
+    :return: speed in degrees/day (negative if retrograde)
+    """
+    observer.date = ephem.Date(observer.date)  # Reset to current date
+    planet.compute(observer)
+    lon1 = math.degrees(planet.hlon) % 360  # Longitude at the start of the day
+
+    observer.date = ephem.Date(observer.date + 1)  # Increment by 1 day
+    planet.compute(observer)
+    lon2 = math.degrees(planet.hlon) % 360  # Longitude at the next day
+
+    observer.date = ephem.Date(observer.date - 1)  # Reset to the original date
+
+    # Calculate angular speed
+    speed = lon2 - lon1
+
+    # Adjust for retrograde motion
+    if speed > 180:
+        speed -= 360  # Handle retrograde crossing 0° longitude
+    elif speed < -180:
+        speed += 360  # Handle forward crossing 0° longitude
+
+    return speed
+
+def determine_functional_status(house, ascendant_sign):
+    """
+    Determine the functional status (Benefic, Neutral, or Malefic) of a planet
+    based on its house rulership and the ascendant sign.
+    """
+    # Houses considered functional benefic, malefic, or neutral
+    functional_benefics = [1, 5, 9]
+    functional_malefics = [6, 8, 12]
+    
+    if house in functional_benefics:
+        return "Benefic"
+    elif house in functional_malefics:
+        return "Malefic"
+    else:
+        return "Neutral"
+
+def check_fixed_star_conjunctions(longitude, orb=1.0):
+    """
+    Check if a given sidereal longitude is conjunct with any fixed stars within a specified orb.
+    
+    Parameters:
+        longitude (float): The sidereal longitude of the planet in degrees.
+        orb (float): The allowable orb of influence in degrees.
+        
+    Returns:
+        str: A string describing the fixed star conjunction, or "None" if no conjunction is found.
+    """
+    closest_star = None
+    min_distance = float("inf")
+    
+    for star in FIXED_STARS:
+        distance = abs(longitude - star["Longitude"])
+        # Normalize distance to handle 360° wrapping
+        if distance > 180:
+            distance = 360 - distance
+            
+        if distance <= orb and distance < min_distance:
+            closest_star = star
+            min_distance = distance
+
+    if closest_star:
+        return f"{closest_star['Name']} {closest_star['Influence']}"
+    return "None"
+
+
+def calculate_dig_bala(observer, planet_name, planet):
+    """
+    Calculate the Dig Bala (Directional Strength) of a planet using ephem.
+    :param observer: ephem.Observer object with date, lat, and lon set.
+    :param planet_name: Name of the planet (e.g., "Sun", "Moon", etc.).
+    :param planet: ephem planet object for the given planet name.
+    :return: Dig Bala score (0 to 1, where 1 is maximum strength).
+    """
+    # Planet-Direction Mapping (maximum strength house)
+    max_strength_directions = {
+        "Jupiter": 0,  # East (Ascendant)
+        "Mercury": 0,  # East (Ascendant)
+        "Sun": 90,     # South (10th House)
+        "Mars": 90,    # South (10th House)
+        "Saturn": 180, # West (7th House)
+        "Moon": 270,   # North (4th House)
+        "Venus": 270,  # North (4th House)
+    }
+
+    # Check if planet is valid for Dig Bala calculation
+    if planet_name not in max_strength_directions:
+        return 0.0  # Default for planets not in the mapping
+
+    # Compute the planet's azimuth
+    planet.compute(observer)
+    azimuth = math.degrees(planet.az)
+
+    # Maximum strength direction for the planet
+    max_direction = max_strength_directions[planet_name]
+
+    # Angular difference from the maximum strength direction
+    angular_diff = abs(azimuth - max_direction)
+
+    # Normalize angular difference to 0–180 degrees
+    if angular_diff > 180:
+        angular_diff = 360 - angular_diff
+
+    # Calculate Dig Bala score (maximum at 0°, minimum at 180°)
+    dig_bala = max(0, 1 - (angular_diff / 180))  # Linear scaling
+
+    return dig_bala
+
+
+def calculate_drishti_aspects(observer, planets, planet_name, ascendant_longitude):
+    """
+    Calculate Drishti (Vedic aspects) for a given planet and determine the
+    benefic or malefic influence based on planetary type.
+    """
+    drishti_aspects = {}
+
+    # Fetch the planetary object and longitude
+    if planet_name not in planets:
+        return {}  # Skip if the planet is not defined
+    planet = planets[planet_name]
+    sidereal_longitude = calculate_sidereal_longitude(observer, planet)
+
+    # Define the specific Drishti aspect patterns for each planet
+    if planet_name == "Jupiter":
+        aspect_degrees = [120, 180, 240]  # 5th, 7th, 9th houses
+    elif planet_name == "Mars":
+        aspect_degrees = [90, 180, 210]  # 4th, 7th, 8th houses
+    elif planet_name == "Saturn":
+        aspect_degrees = [60, 180, 270]  # 3rd, 7th, 10th houses
+    elif planet_name in ["Sun", "Moon", "Mercury", "Venus"]:
+        # Sun, Moon, Mercury, Venus only have 7th house full aspect
+        aspect_degrees = [180]
+    elif planet_name in ["Rahu", "Ketu"]:
+        # Rahu and Ketu are handled separately
+        return {"Rahu-Ketu Influence": "Handled separately"}
+    else:
+        return {}  # Skip planets without Drishti patterns
+
+    # Calculate the Drishti influence on other planets
+    for degree in aspect_degrees:
+        aspect_longitude = (sidereal_longitude + degree) % 360
+        influenced_planet = find_planet_at_longitude(planets, aspect_longitude, orb=10.0)  # 10° orb
+
+        if influenced_planet:
+            # Determine if the influence is benefic or malefic
+            influence_type = "Benefic" if planet_name in BENEFIC_PLANETS else "Malefic"
+            weight = DRISHTI_WEIGHTS[influence_type]
+            drishti_aspects[influenced_planet] = {
+                "Aspect Degree": degree,
+                "Influence Type": influence_type,
+                "Weight": weight,
+            }
+
+    return drishti_aspects
+
+def calculate_composite_drishti_influence(drishti_aspects):
+    """
+    Calculate the composite influence of Drishti aspects on a planet.
+    
+    Parameters:
+        drishti_aspects (dict): Dictionary containing Drishti influences on a planet.
+                                Example structure:
+                                {
+                                    "PlanetName": {
+                                        "Influence": "Benefic" or "Malefic",
+                                        "Weight": float,
+                                        "House": int
+                                    },
+                                    ...
+                                }
+                                
+    Returns:
+        float: Composite Drishti Influence score.
+    """
+    composite_score = 0.0
+
+    for planet, aspect in drishti_aspects.items():
+        # Safely retrieve keys, default to neutral influence and zero weight if missing
+        weight = aspect.get("Weight", 0.0)
+        influence = aspect.get("Influence", "Neutral")
+
+        # Debugging to identify problematic entries
+        if "Weight" not in aspect or "Influence" not in aspect:
+            print(f"DEBUG: Missing keys in Drishti aspect for {planet}: {aspect}")
+
+        # Adjust score based on influence type
+        if influence == "Benefic":
+            composite_score += weight
+        elif influence == "Malefic":
+            composite_score -= weight
+        else:
+            # Neutral influence does not affect the score
+            continue
+
+    return composite_score
+
+
+
+def find_planet_at_longitude(planets, target_longitude, orb=10.0):
+    """
+    Find a planet within a specified orb of a target longitude.
+    """
+    for planet_name, planet in planets.items():
+        sidereal_longitude = calculate_sidereal_longitude(observer, planet)
+        angular_difference = abs((sidereal_longitude - target_longitude + 360) % 360)
+        if angular_difference <= orb:
+            return planet_name
+    return None
+
+
+
+def get_nakshatra_data(longitude):
+    """
+    Determine the Nakshatra, its index, and the ruling planet based on sidereal longitude.
+    :param longitude: Sidereal longitude in degrees.
+    :return: (index, name, ruler) tuple for the Nakshatra.
+    """
+    for i, nakshatra in enumerate(NAKSHATRAS):
+        if nakshatra["Start"] <= longitude < nakshatra["End"]:
+            return i + 1, nakshatra["Name"], nakshatra["Ruler"]
+    raise ValueError(f"Longitude {longitude} does not correspond to any Nakshatra.")
+
+
+
+def determine_functional_status_by_house(house):
+    """
+    Determine the functional status (Benefic, Neutral, or Malefic) of a planet
+    based on its house placement.
+    """
+    # Houses considered functional benefic, malefic, or neutral
+    functional_benefics = [1, 5, 9]
+    functional_malefics = [6, 8, 12]
+
+    if house in functional_benefics:
+        return "Benefic"
+    elif house in functional_malefics:
+        return "Malefic"
+    else:
+        return "Neutral"
+
+
+
+def generate_nakshatra_report(date, janma_tara_index):
+    # Observer for the birth chart (March 4, 1957)
+    natal_observer = ephem.Observer()
+    natal_observer.lat, natal_observer.lon = "40.7128", "-74.0060"  # New York coordinates
+    natal_observer.date = "1957-03-04 14:30:00"  # Convert 9:30 AM EST to UTC (EST + 5 hours)
+
+    # Calculate natal Ascendant
+    natal_ascendant = calculate_ascendant(natal_observer)
+    print(f"Natal Ascendant: {natal_ascendant:.2f}°")  # Debugging output
+    
+
+    # Observer for the current analysis date (e.g., November 5, 2024)
+    observer = ephem.Observer()
+    observer.lat, observer.lon = "40.7128", "-74.0060"  # New York coordinates
+    observer.date = date  # Analysis date
+
+    # Calculate transit Ascendant
+    transit_ascendant = calculate_ascendant(observer)
+    print(f"Transit Ascendant: {transit_ascendant:.2f}°")  # Debugging output
+
+    # Combine natal and transit Ascendants (optional, for transit-based influence analysis)
+    combined_ascendant = (natal_ascendant + transit_ascendant) % 360
+    print(f"Combined Ascendant: {combined_ascendant:.2f}°")  # Debugging output
+
+
+    # Define planets
+    planets = {
+        "Mercury": ephem.Mercury(),
+        "Mars": ephem.Mars(),
+        "Venus": ephem.Venus(),
+        "Moon": ephem.Moon(),
+        "Sun": ephem.Sun(),  # Include the Sun
+    }
+
+
+    # Calculate Natal Moon's Sidereal Longitude
+    natal_moon_longitude = calculate_sidereal_longitude(natal_observer, planets["Moon"])
+    
+    # Determine Natal Moon's Nakshatra Index
+    natal_moon_nakshatra_index, _, _ = get_nakshatra_data(natal_moon_longitude)
+    
+    # Assign Janma Tara Index Dynamically
+    janma_tara_index = natal_moon_nakshatra_index
+    print(f"Janma Tara Index: {janma_tara_index}")  # Debugging output
+
+    # Calculate house placements and lords
+    ascendant_longitude = 100.0  # Example ascendant longitude
+    house_data = calculate_planet_houses(observer, planets, combined_ascendant)
+    for planet, data in house_data.items():
+        print(f"{planet}: House {data['House Placement']}, Lord {data['House Lord']}")
+
+  
+
+    # Add Rahu and Ketu to the analysis
+    house_data["Rahu"] = calculate_rahu_ketu_houses(observer, ascendant_longitude)["Rahu"]
+    house_data["Ketu"] = calculate_rahu_ketu_houses(observer, ascendant_longitude)["Ketu"]    
+
+    # Add Rahu and Ketu as pseudo-planets
+    rahu_longitude, ketu_longitude = calculate_rahu_ketu(observer)
+    rahu = {"hlon": rahu_longitude, "hlon_speed": 0}  # Rahu has no speed
+    ketu = {"hlon": ketu_longitude, "hlon_speed": 0}
+
+    # --- Add Aspect Calculations for Rahu and Ketu ---
+    rahu_ketu_data = calculate_rahu_ketu_houses(observer, ascendant_longitude)  # Already defined
+    rahu_aspects = calculate_aspectual_influence(observer, planets, "Rahu")
+    ketu_aspects = calculate_aspectual_influence(observer, planets, "Ketu")
+
+    # DEBUG: Print Rahu and Ketu influence for verification
+    print(f"DEBUG: Rahu Aspects Influence: {rahu_aspects}")
+    print(f"DEBUG: Ketu Aspects Influence: {ketu_aspects}")
+
+    # Initialize the report dictionary
+    report = {
+        "Attribute": [
+            "Nakshatra Influence", "Ruling Planet", "Pada Influence",
+            "Tara Bala", "Chandra Bala", "Rulership Dignity",
+            "Rulership Aspectual Influence", "Rulership Aspectual Context", "Rulership Planetary Speed",
+            "Rulership Strength (Shadbala)", "Rulership House Placement",
+            "Rulership Functional Status", "Nakshatra Rulership Influence",
+            "Composite Nakshatra Influence", "Aspectual Influence", "Aspectual Context", 
+            "Planetary Speed", "Strength (Shadbala)", "Planetary Dignity",
+            "Functional Status", "House Placement", "House Lord",
+            "House Ruler Dignity", "House Ruler Functional Status",
+            "House Ruler Aspectual Influence", "House Ruler Aspectual Context", "House Ruler Influence",
+            "Strength Score", "Directional Bias Score", 
+            "Dig Bala (Directional Strength)", "Drishti Influence Score",  "Drishti Aspects", "Fixed Star Influence",  # Add Fixed Star Influence
+        ]
+    }
+
+    # Process each planet
+    for planet_name, planet in planets.items():
+        # Calculate Drishti aspects
+        drishti_aspects = calculate_drishti_aspects(observer, planets, planet_name, ascendant_longitude)
+        drishti_influence_score = calculate_composite_drishti_influence(drishti_aspects)
+        # Calculate sidereal longitude
+        sidereal_longitude = calculate_sidereal_longitude(observer, planet)
+
+        print(f"DEBUG: Sidereal Longitude for {planet_name}: {sidereal_longitude:.2f}")
+
+        # Check for fixed star conjunctions
+        fixed_star_conjunctions = check_fixed_star_conjunctions(sidereal_longitude)
+        print(f"DEBUG: {planet_name} Fixed Star Conjunctions: {fixed_star_conjunctions}")
+
+            # Debugging information
+        print(f"DEBUG: {planet_name} - Drishti Aspects: {drishti_aspects}")
+        print(f"DEBUG: {planet_name} - Composite Drishti Influence Score: {drishti_influence_score:.2f}")
+
+        # Get Nakshatra data
+        nakshatra_index, nakshatra_name, nakshatra_ruler_name = get_nakshatra_data(sidereal_longitude)
+
+        # Initialize rulership_functional_status with a default value
+        rulership_functional_status = "(0.0) (Neutral)"  # Default for cases where no valid calculation is possible
+
+        # Calculate Nakshatra ruler's house placement and dignity
+        if nakshatra_ruler_name in house_data:
+            nakshatra_ruler_house = house_data[nakshatra_ruler_name]["House Placement"]
+            nakshatra_ruler_sign = ZODIAC_SIGNS[int(house_data[nakshatra_ruler_name]["Sidereal Longitude"] // 30)]
+
+            
+            # Determine dignity and weight
+            nakshatra_ruler_dignity, nakshatra_ruler_dignity_weight = determine_dignity(nakshatra_ruler_name, nakshatra_ruler_sign)
+
+                # --- Add the Functional Status Calculation ---
+            ruler_functional_status = calculate_functional_status_weight_and_update(
+                nakshatra_ruler_house,
+                nakshatra_ruler_house,
+                [planet for planet in planets.keys() if planet != nakshatra_ruler_name]
+             )
+            
+            # Debugging information for functional status
+            print(f"DEBUG: Nakshatra Ruler Functional Status for {nakshatra_ruler_name}: {ruler_functional_status}")
+
+        else:
+            # Default values when Nakshatra ruler is not in house data
+            nakshatra_ruler_house = "TBD"
+            nakshatra_ruler_sign = "TBD"
+            nakshatra_ruler_dignity = "Neutral"
+            nakshatra_ruler_dignity_weight = 0.0
+            ruler_functional_status = "(0.0) (Neutral)"  # Default
+
+            # Determine rulership functional status
+            associations = [planet for planet in planets.keys() if planet != nakshatra_ruler_name]
+            rulership_functional_status = calculate_functional_status_weight_and_update(
+                nakshatra_ruler_house, nakshatra_ruler_house, associations
+            )
+
+        # Update Functional Status
+        functional_status = calculate_functional_status_weight_and_update(
+            house_data[planet_name]["House Placement"],
+            house_data[planet_name]["House Placement"],
+            [planet for planet in planets.keys() if planet != planet_name]
+        )
+
+        # Update House Ruler Functional Status
+        house_lord = house_data[planet_name]["House Lord"]
+        if house_lord in house_data:
+            house_ruler_functional_status = calculate_functional_status_weight_and_update(
+                house_data[house_lord]["House Placement"],
+                house_data[planet_name]["House Placement"],
+                [planet for planet in planets.keys() if planet != house_lord]
+            )
+        else:
+            house_ruler_functional_status = "(0.0) (Neutral)"  # Default for undefined house lord
+
+        # Debug information for tracing
+        print(f"DEBUG: Nakshatra Ruler: {nakshatra_ruler_name}")
+        print(f"DEBUG: Nakshatra Ruler House: {nakshatra_ruler_house}")
+        print(f"DEBUG: Nakshatra Ruler Dignity: {nakshatra_ruler_dignity} ({nakshatra_ruler_dignity_weight:+.1f})")
+        print(f"DEBUG: Rulership Functional Status: {rulership_functional_status}")
+
+
+        # Determine Pada (1-4)
+        degrees_into_nakshatra = sidereal_longitude - NAKSHATRAS[nakshatra_index - 1]["Start"]
+        pada = int(degrees_into_nakshatra // (13.3333 / 4)) + 1
+        navamsa_sign = NAKSHATRA_PADA_NAVAMSA[nakshatra_index - 1][pada - 1]
+
+        print(f"DEBUG: {planet_name} - Nakshatra: {nakshatra_name}, Pada: {pada}, Ruler: {nakshatra_ruler_name}")
+
+        # Determine dignity of the planet in the Navamsa
+        pada_dignity, pada_weight = determine_dignity(planet_name, navamsa_sign)
+
+        # Calculate Tara Bala if the planet is the Moon
+        tara_bala = "TBD"
+        if planet_name == "Moon":
+            # Calculate natal Moon's longitude
+            natal_moon_longitude = calculate_sidereal_longitude(natal_observer, planets["Moon"])
+
+            # Get the Nakshatra index of the natal Moon
+            natal_nakshatra_index = get_nakshatra_data(natal_moon_longitude)[0]
+
+            # Calculate Tara Bala for the transit Moon
+            tara_bala = determine_tara_bala(sidereal_longitude, natal_nakshatra_index)
+
+
+        # Calculate Nakshatra ruler's speed
+        rulership_speed_weight = 0.0  # Default in case ruler is missing
+        if nakshatra_ruler_name in planets:
+            rulership_speed_weight = calculate_ruler_speed(observer, nakshatra_ruler_name)
+
+        # Calculate analyzed planet's speed
+        speed = calculate_speed(observer, planet)
+        planetary_speed_weight = calculate_composite_speed(
+            speed=speed,
+            declination=planet.dec,
+            retrograde=getattr(planet, "retrograde", False),
+            planetary_type="Inner" if planet_name in ["Moon", "Mars", "Mercury", "Venus"] else "Outer",
+            planet_name=planet_name
+        )
+
+        print(f"DEBUG: {planet_name} - Speed: {speed:.2f}, Composite Speed Contribution: {planetary_speed_weight:.2f}")
+
+
+        # Use house placement and lord
+        house_placement = house_data[planet_name]["House Placement"]
+        functional_status = determine_functional_status_by_house(house_placement)
+        house_lord = house_data[planet_name]["House Lord"]
+        house_lord_sign = ZODIAC_SIGNS[int(house_data[house_lord]["Sidereal Longitude"] // 30)] if house_lord in house_data else None
+        house_lord_dignity, house_lord_dignity_weight = determine_dignity(house_lord, house_lord_sign) if house_lord_sign else ("Neutral", 0.0)
+
+        if house_lord in house_data:
+            house_ruler_house = house_data[house_lord]["House Placement"]
+            house_ruler_functional_status = determine_functional_status_by_house(house_ruler_house)
+        else:
+            house_ruler_functional_status = "Neutral"
+
+            print(f"DEBUG: {planet_name} - House Placement: {house_placement}, Functional Status: {functional_status}")
+
+
+        # Aspectual Context for the analyzed planet
+        aspectual_context = calculate_aspectual_context(observer, planets, planet_name)
+
+        print(f"DEBUG: Aspectual Context for {planet_name}: {aspectual_context}")
+
+        # Aspectual Influence for the analyzed planet
+        aspectual_influence = calculate_aspectual_influence(observer, planets, planet_name)
+        print(f"DEBUG: Aspectual Influence for {planet_name}: {aspectual_influence:.2f}")
+
+
+        # Rulership Aspectual Context for the Nakshatra ruler
+        rulership_aspectual_context = (
+            calculate_rulership_aspectual_context(observer, planets, nakshatra_ruler_name, planet_name)
+            if nakshatra_ruler_name in planets
+            else "None"
+        )
+        
+       # Calculate aspects for house ruler (House Ruler Aspectual Context)
+        house_ruler_aspectual_context = []
+        house_lord = house_data[planet_name]["House Lord"]
+        if house_lord in planets:
+            house_ruler = planets[house_lord]
+            for other_name, other_planet in planets.items():
+                if other_name != house_lord:
+                    aspect = calculate_aspects(observer, house_ruler, other_planet)
+                    if aspect != "None":
+                        house_ruler_aspectual_context.append(f"{other_name}: {aspect}")
+        house_ruler_aspectual_context = ", ".join(house_ruler_aspectual_context) or "None"
+
+        # Aspectual Influence for analyzed planet
+        aspectual_influence = calculate_aspectual_influence(observer, planets, planet_name)
+
+                # Aspectual Influence for Nakshatra ruler
+        rulership_aspectual_influence = calculate_aspectual_influence(observer, planets, nakshatra_ruler_name)
+
+                # Aspectual Influence for house ruler
+        house_ruler_aspectual_influence = calculate_aspectual_influence(observer, planets, house_lord)
+
+        # Aspectual contexts and influences
+        aspectual_context = calculate_aspectual_context(observer, planets, planet_name)
+        rulership_aspectual_context = calculate_aspectual_context(observer, planets, nakshatra_ruler_name)
+        house_ruler_aspectual_context = calculate_aspectual_context(observer, planets, house_data[planet_name]["House Lord"])
+
+        aspectual_influence = calculate_aspectual_influence(observer, planets, planet_name)
+        rulership_aspectual_influence = calculate_aspectual_influence(observer, planets, nakshatra_ruler_name)
+        house_ruler_aspectual_influence = calculate_aspectual_influence(observer, planets, house_lord)
+
+        # Calculate the Strength Score
+        # Combine weights for Nakshatra Influence, Aspectual Influence, Planetary Speed, and Functional Status
+        nakshatra_influence = NAKSHATRAS[nakshatra_index - 1]["Weight"]
+        aspectual_influence_weight = aspectual_influence
+        speed_weight = planetary_speed_weight
+        dignity_weight = pada_weight
+        functional_status_weight = 0.5 if functional_status == "Benefic" else -0.5 if functional_status == "Malefic" else 0.0
+
+        # Composite Strength Score calculation
+        strength_score = (
+            nakshatra_influence +
+            aspectual_influence_weight +
+            speed_weight +
+            dignity_weight +
+            functional_status_weight
+        )
+
+        # Debug information
+        print(f"DEBUG: Strength Score for {planet_name}: {strength_score:.2f}")
+
+        # Check for fixed star conjunctions
+        fixed_star_conjunctions = check_fixed_star_conjunctions(sidereal_longitude)
+
+
+        # Debugging information
+        print(f"DEBUG: {planet_name} Sidereal Longitude: {sidereal_longitude}")
+        print(f"DEBUG: {planet_name} Fixed Star Conjunctions: {fixed_star_conjunctions}")
+
+
+        # Add fixed star influence to the report
+        fixed_star_influence = ", ".join(fixed_star_conjunctions) or "None"
+
+
+        # Calculate Dig Bala
+        dig_bala_score = calculate_dig_bala(observer, planet_name, planet)
+
+        if planet_name in ["Rahu", "Ketu"]:
+            # Rahu and Ketu influence is symbolic, not aspectual
+            rahu_ketu_influence = "Symbolic malefic influence"
+            planet_data.append(f"{rahu_ketu_influence}")  # Influence description
+            planet_data.append("N/A")  # No Drishti aspects for Rahu/Ketu
+        else:
+            # Regular Drishti calculations
+            drishti_aspects = calculate_drishti_aspects(observer, planets, planet_name, ascendant_longitude)
+            drishti_influence_score = sum(aspect["Weight"] for aspect in drishti_aspects.values())
+            drishti_report = ", ".join(
+                f"{influenced}: {aspect['Influence Type']} ({aspect['Weight']:+.2f})"
+                for influenced, aspect in drishti_aspects.items()
+            )
+
+
+
+        # Generate data for the report
+        planet_data = [
+            f"{NAKSHATRAS[nakshatra_index - 1]['Weight']:+.1f} ({nakshatra_name})",  # Nakshatra Influence
+            nakshatra_ruler_name,  # Ruling Planet
+            f"{pada_weight:+.1f} (Pada {pada}, {navamsa_sign} Navamsa)",  # Pada Influence
+            tara_bala,  # Tara Bala
+            determine_chandra_bala(),  # Chandra Bala
+            f"{nakshatra_ruler_dignity_weight:+.1f} ({nakshatra_ruler_dignity})",  # Rulership Dignity
+            f"{rulership_aspectual_influence:+.2f}",  # Rulership Aspectual Influence
+            rulership_aspectual_context,  # Rulership Aspectual Context
+            f"{rulership_speed_weight:+.1f} (Composite Speed Contribution)",  # Rulership Planetary Speed
+            "TBD",  # Rulership Strength (Shadbala)
+            get_house_weighting(nakshatra_ruler_house),  # Rulership House Placement (Weighted)
+            rulership_functional_status,  # Rulership Functional Status
+            f"{NAKSHATRAS[nakshatra_index - 1]['Weight']:+.1f} ({nakshatra_name})",  # Nakshatra Influence
+            "TBD",  # Composite Nakshatra Influence
+            f"{aspectual_influence:+.2f}",  # Aspectual Influence
+            aspectual_context,  # Aspectual Context
+            f"{planetary_speed_weight:+.1f} (Composite Speed Contribution)",  # Planetary Speed
+            "TBD",  # Strength (Shadbala)
+            f"{pada_weight:+.1f} ({pada_dignity})",  # Planetary Dignity
+            functional_status,  # Functional Status
+            get_house_weighting(house_placement),  # House Placement (Weighted)
+            f"{house_lord}",  # House Lord
+            f"{house_lord_dignity_weight:+.1f} ({house_lord_dignity})",  # House Ruler Dignity
+            f"{house_ruler_functional_status}",  # House Ruler Functional Status
+            f"{house_ruler_aspectual_influence:+.2f}",  # House Ruler Aspectual Influence
+            house_ruler_aspectual_context,  # House Ruler Aspectual Context
+            "TBD",  # House Ruler Influence
+            "TBD",  # Strength Score (placeholder)
+            "TBD",  # Directional Bias Score",
+            f"{dig_bala_score:.2f} (Dig Bala)",  # Dig Bala
+            f"{drishti_influence_score:+.2f}",  # Drishti Influence Score
+            drishti_report,  # Drishti Aspects
+            fixed_star_conjunctions,  # Fixed Star Influence (as a single string)
+
+        ]
+
+        # Assign the calculated Strength Score
+        planet_data[-3] = f"{strength_score:+.2f}"  # Update Strength Score
+
+        # Assign the data to the report
+        report[planet_name] = planet_data
+
+        print(f"DEBUG: Completed processing {planet_name}.")
+        print(f"DEBUG: Report before updating Strength Score: {report[planet_name]}")
+
+        # Adjust planet data length to match attribute length
+        attribute_length = len(report["Attribute"])
+        while len(report[planet_name]) < attribute_length:
+            report[planet_name].append("TBD")
+        while len(report[planet_name]) > attribute_length:
+            report[planet_name] = report[planet_name][:attribute_length]
+
+    # Return the report as a DataFrame
+    df = pd.DataFrame(report)
+    pd.set_option("display.max_colwidth", None)  # Expand display for long fields
+    return df
+
+
+# Run the script
+if __name__ == "__main__":
+    # Set the analysis date (November 5, 2024)
+    analysis_date = "2025-03-26"
+
+
+     # Define natal observer
+    natal_observer = ephem.Observer()
+    natal_observer.lat, natal_observer.lon = "40.7128", "-74.0060"
+    natal_observer.date = "1957-03-04"
+
+    # Calculate natal ascendant
+    natal_ascendant = calculate_ascendant(natal_observer)
+    print(f"Natal Ascendant: {natal_ascendant:.2f}°")  # Debugging output
+
+    # Define transit observer
+    observer = ephem.Observer()  # Use a different observer name if needed
+    observer.lat, observer.lon = "40.7128", "-74.0060"
+    observer.date = "2025-03-26"  # Example analysis date
+
+    # Use precomputed natal ascendant
+    # natal_ascendant = calculate_ascendant(natal_observer)
+
+    planets = {
+        "Moon": ephem.Moon(),
+        "Mercury": ephem.Mercury(),
+        "Mars": ephem.Mars(),
+        "Venus": ephem.Venus(),
+        "Sun": ephem.Sun(),
+    }
+
+    # Example usage:
+    # Assuming sidereal ascendant longitude (adjust per actual data)
+    ascendant_longitude = 100.0  # Example ascendant longitude in degrees
+
+    # *** Move the following code block inside the if __name__ == "__main__": block ***
+    # Calculate results
+    house_data = calculate_planet_houses(observer, planets, ascendant_longitude)
+    for planet, data in house_data.items():
+        print(f"{planet}: House {data['House Placement']}, Lord {data['House Lord']}")
+    # *** End of moved code block ***
+
+
+    # Generate the report
+    report_df = generate_nakshatra_report(analysis_date, janma_tara_index)
+    print(report_df)
