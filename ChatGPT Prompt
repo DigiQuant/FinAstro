@@ -1,0 +1,583 @@
+Please perform a detailed astrological analysis to determine the daily market bias and expected price action characteristics for [Date of Transit Chart, e.g., March 27, 2025], based on the provided Natal Chart data for [Date of Natal Chart, e.g., March 4, 1957] and the Transit Chart data.
+
+Focus exclusively on these planets: Sun, Moon, Mars, Venus, Mercury, Rahu (True Node), and Ketu (True S. Node).
+
+Input Data Provided:
+
+Natal Chart Details: Planetary positions (Sign, Degree), House Placements (Sripathi/Lahiri), Nakshatra, Pada, Nakshatra Lords, House Lordships.
+
+Transit Chart Details: Planetary positions (Sign, Degree), House Placements relative to Natal Ascendant (Sripathi/Lahiri), Nakshatra, Pada, Nakshatra Lords, House Lordship based on Transit placement relative to Natal Ascendant.
+
+Natal Strength Data: Natal Shadbala table, Natal Bhavabala table, Natal Sarvashtakavarga table, Natal Bhinnashtaka Varga tables for each planet.
+
+Planetary Speed: Planetary speeds and classifications (Fast, Slow, Normal, Rx, Stationary).
+
+Transit Aspects: Transit-to-Natal aspects for specified planets, orb, and status (Applying/Separating). Use max orb 5 degrees for conjunction, opposition, square, trine, and sextile.
+
+Nakshatra Reference Table: Nakshatra boundaries, rulers, weights, and directional trends (Bullish/Bearish). Include Nakshatra weights explicitly in your reply.
+
+Analysis Requirements:
+
+For each planet (Sun, Moon, Mars, Venus, Mercury, Rahu, Ketu):
+
+Natal Foundation:
+
+Summarize natal placement (Sign, House).
+
+Indicate strength clearly (Shadbala ratio/rank, Bhavabala for its house, SAV score). Note significant weaknesses.
+
+Natal Nakshatra influence (Lord, Weight, Trend). Assess Nakshatra Lord's natal condition briefly.
+
+Assess Natal Lord of occupied House and its condition (strength/weakness).
+
+Transit Activation:
+
+Transit placement (Sign, Degree, Speed).
+
+Identify transiting House relative to Natal Ascendant.
+
+Transit House & Lord Analysis:
+
+Classify transited house nature (Dusthana, Trikona, Kendra, Upachaya).
+
+Evaluate inherent house influence (e.g., gains, obstacles, action).
+
+Analyze condition of Natal Lord of transited house during transit (Sign, House, Dignity, Rx, Speed, Aspects). State if this condition supports, undermines, or is neutral to the house potential.
+
+Crucially, also assess the dignity and condition of the planet currently transiting the house. Does its strength/weakness potentially override or strongly modify the House Lord's influence for the immediate day, especially for fast planets like the Moon? Give significant weight to both factors.
+
+Transit Nakshatra Analysis:
+
+State Nakshatra (Lord, Weight, Trend).
+
+Assess condition of the Nakshatra Lord during transit (placement, Rx, speed, aspects).
+
+Explicitly discuss if Nakshatra Lord's condition strengthens, weakens, or potentially reverses the Nakshatra's directional trend, considering the Nakshatra's Weight.
+
+Also consider the condition of the planet transiting the Nakshatra. If the transiting planet is very strong (e.g., exalted Moon) in a high-weight positive Nakshatra, acknowledge this as a strong immediate signal, even if the Nakshatra Lord has issues.
+
+Aspect Analysis:
+
+Highlight only applying aspects (within 5° orb) from transit planets to natal Sun, Moon, Mercury, Venus, Mars, Ascendant, or MC.
+
+Label aspects as harmonious (supportive/bullish potential) or disharmonious (stressful/bearish/volatile potential).
+
+Strongly emphasize conjunctions, squares, oppositions, especially involving Rx or debilitated planets, noting their potential for sharp, disruptive, or unexpected effects. Note separating aspects as fading influences.
+
+Retrograde Status (High Weight for Volatility/Unpredictability):
+
+Strongly emphasize Rx planets, especially Rx + Debilitation/Affliction (e.g., Mercury, Venus), as dominant drivers of volatility, unpredictability, confusion, potential for sharp reversals (in either direction), and underlying market fragility.
+
+Discuss the increased likelihood of deviations from expected trends, technical failures, rumour-driven moves, or unsustainable price action, rather than solely predicting negative price action. Acknowledge that intense affliction can sometimes fuel sharp, albeit potentially irrational or short-lived, moves against the apparent trend.
+
+Planetary Speed:
+
+Clearly integrate speed: Fast Moon = driver of intraday sentiment and immediate swings. Slow planets (like Rx Mercury/Venus, slow Mars) = background conditions, sustained pressure, or potential for delayed reactions.
+
+Planet Synthesis:
+
+Integrate natal foundation, transit activation, house (planet-in-house vs. lord), nakshatra (planet-in-nakshatra vs. lord), aspects, Rx status, and speed.
+
+Explicitly state the type of influence: supportive (bullish), challenging (bearish), erratic/confusing (volatile), mixed. Assign a directional bias potential (e.g., Bullish potential, Bearish pressure, High Volatility expected).
+
+Overall Synthesis and Daily Bias:
+
+Collate Influences: Clearly separate factors suggesting Bullish potential from factors suggesting Bearish pressure or High Volatility/Confusion.
+
+Weighting Dynamics:
+
+Assign High Weight to Mercury Rx/Debilitated and Venus Rx/Debilitated primarily as indicators of High Volatility, Unpredictability, Reversal Risk, and potential for Systemic Stress, rather than purely bearish direction. State clearly how they distort market rationality and flow.
+
+Critically Assess Moon Influence: Give significant weight to the fast-moving Moon for intraday sentiment and initial direction, especially if strongly dignified (Exaltation, Own Sign, strong Nakshatra like Rohini/Pushya/Shravana) and well-aspected. Explicitly state if the Moon's immediate strength appears capable of temporarily driving price action, potentially even counter to the underlying stress indicated by slower afflicted planets.
+
+Balancing Act:
+
+Evaluate if powerful immediate positives (e.g., Exalted Moon in Rohini in 11th) can realistically create a bullish daily outcome despite significant background negatives (Mercury/Venus Rx/Deb). Acknowledge the tension between immediate sentiment (Moon) and underlying fragility (Rx planets).
+
+Is the picture one where strong positive drivers overcome weak negatives? Or strong negatives overwhelm weak positives? Or, crucially, is it a conflict between strong immediate positives and strong background negatives, suggesting a day prone to strong trends but with high underlying reversal risk?
+
+Dominant Theme: Explicitly state if the dominant theme appears to be Directional Strength (Bullish/Bearish), Directional Conflict (Mixed/Choppy), or Overriding Volatility/Unpredictability (Volatile-Positive, Volatile-Negative, Chaotic).
+
+Conclusion:
+
+Daily Bias & Volatility: Provide a clear Daily Bias (e.g., Bullish, Bearish, Mixed-Bullish, Mixed-Bearish, Volatile-Bullish, Volatile-Bearish, Highly Volatile with Reversal Risk, Neutral-Volatile).
+
+Expected Price Action: Explicitly describe the expected character of the market movement:
+
+Sustained trend (strong up/down)?
+
+Choppy / Range-bound?
+
+Volatile with sharp swings in both directions (Whipsaws)?
+
+Initial strength followed by reversal? Initial weakness followed by reversal?
+
+Prone to unexpected gaps or news-driven jumps?
+
+Concise Justification: Explicitly reference the dominant weighted factors and the interplay between them (e.g., "Strong immediate bullish sentiment from exalted Moon in Rohini likely drives initial gains, but the background fragility from Mercury/Venus Rx+Deb creates high risk of volatility and potential afternoon reversal," OR "The severe affliction of Mercury/Venus Rx+Deb overwhelms other factors, suggesting high volatility and likely negative pressure despite...") Explain why these factors lead to the specific bias and volatility assessment.
+
+NAKSHATRA_BOUNDARIES = [
+    {"Name": "Ashwini", "Start": 0.0, "End": 13.3333, "Ruler": "Ketu", "Weight": 1.3, "Trend": "Bullish"},
+    {"Name": "Bharani", "Start": 13.3333, "End": 26.6667, "Ruler": "Venus", "Weight": 0.9, "Trend": "Bullish"},
+    {"Name": "Krittika", "Start": 26.6667, "End": 40.0, "Ruler": "Sun", "Weight": 0.7, "Trend": "Bullish"},
+    {"Name": "Rohini", "Start": 40.0, "End": 53.3333, "Ruler": "Moon", "Weight": 3.5, "Trend": "Strong Bullish"},
+    {"Name": "Mrigashira", "Start": 53.3333, "End": 66.6667, "Ruler": "Mars", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Ardra", "Start": 66.6667, "End": 80.0, "Ruler": "Rahu", "Weight": 0.5, "Trend": "Strong Bearish"},
+    {"Name": "Punarvasu", "Start": 80.0, "End": 93.3333, "Ruler": "Jupiter", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Pushya", "Start": 93.3333, "End": 106.6667, "Ruler": "Saturn", "Weight": 4.0, "Trend": "Strong Bullish"},
+    {"Name": "Ashlesha", "Start": 106.6667, "End": 120.0, "Ruler": "Mercury", "Weight": 1.1, "Trend": "Bearish"},
+    {"Name": "Magha", "Start": 120.0, "End": 133.3333, "Ruler": "Ketu", "Weight": 0.5, "Trend": "Slightly Bullish"},
+    {"Name": "Purva Phalguni", "Start": 133.3333, "End": 146.6667, "Ruler": "Venus", "Weight": 1.2, "Trend": "Bullish"},
+    {"Name": "Uttara Phalguni", "Start": 146.6667, "End": 160.0, "Ruler": "Sun", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Hasta", "Start": 160.0, "End": 173.3333, "Ruler": "Moon", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Chitra", "Start": 173.3333, "End": 186.6667, "Ruler": "Mars", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Swati", "Start": 186.6667, "End": 200.0, "Ruler": "Rahu", "Weight": 0.4, "Trend": "Slightly Bearish"},
+    {"Name": "Vishakha", "Start": 200.0, "End": 213.3333, "Ruler": "Jupiter", "Weight": 0.3, "Trend": "Mild Bullish"},
+    {"Name": "Anuradha", "Start": 213.3333, "End": 226.6667, "Ruler": "Saturn", "Weight": 2.0, "Trend": "Strong Bullish"},
+    {"Name": "Jyeshtha", "Start": 226.6667, "End": 240.0, "Ruler": "Mercury", "Weight": 1.3, "Trend": "Bearish"},
+    {"Name": "Mula", "Start": 240.0, "End": 253.3333, "Ruler": "Ketu", "Weight": 1.7, "Trend": "Strong Bearish"},
+    {"Name": "Purva Ashadha", "Start": 253.3333, "End": 266.6667, "Ruler": "Venus", "Weight": 1.0, "Trend": "Bullish"},
+    {"Name": "Uttara Ashadha", "Start": 266.6667, "End": 280.0, "Ruler": "Sun", "Weight": 1.7, "Trend": "Bullish"},
+    {"Name": "Shravana", "Start": 280.0, "End": 293.3333, "Ruler": "Moon", "Weight": 3.3, "Trend": "Strong Bullish"},
+    {"Name": "Dhanishtha", "Start": 293.3333, "End": 306.6667, "Ruler": "Mars", "Weight": 1.1, "Trend": "Bullish"},
+    {"Name": "Shatabhisha", "Start": 306.6667, "End": 320.0, "Ruler": "Rahu", "Weight": 1.5, "Trend": "Bearish"},
+    {"Name": "Purva Bhadrapada", "Start": 320.0, "End": 333.3333, "Ruler": "Jupiter", "Weight": 0.5, "Trend": "Mild Bullish"},
+    {"Name": "Uttara Bhadrapada", "Start": 333.3333, "End": 346.6667, "Ruler": "Saturn", "Weight": 0.9, "Trend": "Mild Bullish"},
+    {"Name": "Revati", "Start": 346.6667, "End": 360.0, "Ruler": "Mercury", "Weight": 1.3, "Trend": "Bullish"}
+]
+
+
+==============================
+   NATAL SHADBALA TABLE
+==============================
+
+
+Balas	Moon	Sun	Mercury	Venus	Mars	Jupiter	Saturn
+Uchcha Bala	46.48	43.49	12.71	44.37	29.87	39.9	49.76
+Saptavargaja Bala	67.5	63.75	75	80.63	105	43.13	95.63
+Ojhayugmarasiamsa Bala	30	30	30	15	30	15	0
+Kendradi Bala	15	30	30	30	60	15	30
+Drekkana Bala	15	0	0	0	0	15	0
+Sthaana Bala	173.98	167.24	147.71	170	224.87	128.02	175.38
+Dig Bala	23.84	46.82	38.65	9.73	24.18	11.87	46.73
+Nathonnatha Bala	19.17	40.83	60	40.83	19.17	40.83	19.17
+Paksha Bala	98.68	49.34	49.34	10.66	49.34	10.66	49.34
+Tribhaga Bala	0	0	60	0	0	60	0
+Varsha Bala	0	0	0	0	0	15	0
+Masa Bala	0	0	0	0	0	0	30
+Dina Bala	45	0	0	0	0	0	0
+Hora Bala	0	0	0	0	0	0	60
+Ayana Bala	22.13	43.7	44.58	16.95	53.05	30.72	58.71
+Yudhdha Bala	0	0	0	0	0	0	0
+Kaala Bala	184.97	133.88	213.92	68.44	121.56	157.22	217.21
+Cheshta Bala	0	0	3.09	5.27	27.45	54.81	30.89
+Naisargika Bala	51.43	60	25.7	42.85	17.14	34.28	8.57
+Drik Bala	5.13	-15.84	-20.94	-19.72	-2.74	-38.12	-15.62
+Total shadbala Bala	439.36	392.09	408.14	276.57	412.46	348.08	463.16
+Shadbala in rupas	7.32	6.53	6.8	4.61	6.87	5.8	7.72
+minimum requirement	6	5	7	5.5	5	6.5	5
+Ratio	1.22	1.31	0.97	0.84	1.37	0.89	1.54
+Relative rank	4	3	5	7	2	6	1
+Ishta Phala	0	0	6.27	15.3	28.64	46.76	39.2
+Kashta Phala	28.48	31.48	51.88	29.25	31.31	10.22	17.27
+
+
+==============================
+    NATAL BHAVABALA TABLE
+==============================
+
+
+Balas
+House
+Bhavadhipati Bala	Bhavadig Bala	Bhavadrishti Bala	Total Bhavabala	Bhavabala in rupas	Relative rank
+1	412.46	30	22.1	464.56	7.74	4
+2	276.57	20	8.72	305.29	5.09	11
+3	408.14	40	-20.84	427.3	7.12	6
+4	439.36	60	-16.73	482.63	8.04	3
+5	392.09	10	-68.84	333.25	5.55	10
+6	408.14	10	-51.88	366.26	6.1	9
+7	276.57	0	-20.05	256.53	4.28	12
+8	412.46	50	1.85	464.31	7.74	5
+9	348.08	20	32.76	400.84	6.68	8
+10	463.16	60	47.37	570.53	9.51	1
+11	463.16	40	-11	492.15	8.2	2
+12	348.08	20	46.55	414.63	6.91	7
+
+======================== 
+Natal Bhinnashtaka Varga
+========================
+Sun (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha			1		1				2
+Vrishabha	1	1			1	1	1		5
+Mithuna			1				1	1	3
+Karka			1	1	1	1	1	1	6
+Simha	1	1		1			1		4
+Kanya	1						1	1	3
+Tula	1		1		1				3
+Vrischika	1		1		1		1		4
+Dhanu	1	1	1		1		1		5
+Makara		1	1	1	1	1		1	6
+Kumbha	1				1	1	1	1	5
+Meena	1							1	2
+Total	8	4	7	3	8	4	8	6	48
+
+
+Moon (Natal Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha	1		1	1		1	1		5
+Vrishabha		1	1	1	1				4
+Mithuna			1	1	1	1		1	5
+Karka	1					1			2
+Simha	1	1	1	1	1	1			6
+Kanya	1	1	1		1	1	1	1	7
+Tula				1					1
+Vrischika	1		1	1					3
+Dhanu	1	1	1	1	1	1			6
+Makara		1			1		1	1	4
+Kumbha			1		1			1	3
+Meena		1				1	1		3
+Total	6	6	8	7	7	7	4	4	49
+
+
+Mercury (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha		1	1	1	1	1		1	6
+Vrishabha				1	1		1	1	4
+Mithuna	1	1	1	1			1		5
+Karka	1		1		1	1	1	1	6
+Simha		1				1	1		3
+Kanya				1			1	1	3
+Tula	1	1	1	1	1				5
+Vrischika			1		1		1	1	4
+Dhanu	1	1	1	1	1		1		6
+Makara	1	1	1		1			1	5
+Kumbha			1	1	1	1	1	1	6
+Meena				1					1
+Total	5	6	8	8	8	4	8	7	54
+
+Venus (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha		1	1	1		1		1	5
+Vrishabha		1		1		1		1	4
+Mithuna		1	1	1	1	1	1	1	7
+Karka		1	1			1	1	1	5
+Simha					1		1	1	3
+Kanya	1			1	1		1		4
+Tula		1	1	1					3
+Vrischika		1		1				1	3
+Dhanu	1		1	1	1			1	5
+Makara	1	1				1	1		4
+Kumbha		1		1	1		1	1	5
+Meena		1		1	1		1		4
+Total	3	9	5	9	6	5	7	8	52
+
+Mars (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha	1		1		1			1	4
+Vrishabha		1			1		1		3
+Mithuna	1		1			1	1	1	5
+Karka	1		1	1	1	1	1		6
+Simha		1				1	1		3
+Kanya				1			1	1	3
+Tula					1				1
+Vrischika	1				1		1		3
+Dhanu	1		1	1					3
+Makara		1		1	1			1	4
+Kumbha					1	1	1	1	4
+Meena									0
+Total	5	3	4	4	7	4	7	5	39
+
+
+Jupiter (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha	1	1			1	1	1	1	6
+Vrishabha	1		1		1			1	4
+Mithuna			1	1		1			3
+Karka		1	1	1	1	1		1	6
+Simha	1							1	2
+Kanya	1	1				1		1	4
+Tula	1		1	1	1	1	1	1	7
+Vrischika	1	1	1	1	1	1			6
+Dhanu	1		1	1		1		1	5
+Makara		1			1		1	1	4
+Kumbha	1		1		1			1	4
+Meena	1		1	1		1	1		5
+Total	9	5	8	6	7	8	4	9	56
+
+Saturn (Bhinnashtaka Varga)
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Ascendant	Total
+Mesha							1	1	2
+Vrishabha	1	1							2
+Mithuna					1			1	2
+Karka			1	1		1		1	4
+Simha	1	1			1	1			4
+Kanya	1		1		1		1	1	5
+Tula			1						1
+Vrischika	1		1						2
+Dhanu	1		1	1					3
+Makara		1	1	1	1	1	1	1	7
+Kumbha	1				1	1		1	4
+Meena	1				1		1		3
+Total	7	3	6	3	6	4	4	6	39
+
+
+=====================================
+       Natal Sarvashtakavarga Table
+=====================================
+Sarvashtakavarga Table
+Sun	Moon	Mercury	Venus	Mars	Jupiter	Saturn	Score
+Mesha	2	5	6	5	4	6	2	30
+Vrishabha	5	4	4	4	3	4	2	26
+Mithuna	3	5	5	7	5	3	2	30
+Karka	6	2	6	5	6	6	4	35
+Simha	4	6	3	3	3	2	4	25
+Kanya	3	7	3	4	3	4	5	29
+Tula	3	1	5	3	1	7	1	21
+Vrischika	4	3	4	3	3	6	2	25
+Dhanu	5	6	6	5	3	5	3	33
+Makara	6	4	5	4	4	4	7	34
+Kumbha	5	3	6	5	4	4	4	31
+Meena	2	3	1	4	0	5	3	18
+Total	48	49	54	52	39	56	39	337
+
+
+Calculating UTC times...
+
+Creating AstrologicalSubject instances...
+- Successfully created: S&P500
+- Successfully created: Transit Chart (Apr 3, 2025)
+
+==============================
+   STANDARD NATAL CHART REPORT: S&P500
+   (Using Sripathi Houses, LAHIRI Ayanamsa)
+==============================
+
++- Kerykeion report for S&P500 -+
++----------+-------+--------------+-----------+----------+
+| Date     | Time  | Location     | Longitude | Latitude |
++----------+-------+--------------+-----------+----------+
+| 4/3/1957 | 14:30 | New York, US | -74.006   | 40.7128  |
++----------+-------+--------------+-----------+----------+
++-----------------+------+-------+------+----------------+
+| Planet          | Sign | Pos.  | Ret. | House          |
++-----------------+------+-------+------+----------------+
+| Sun             | Aqu  | 20.71 | -    | Eighth_House   |
+| Moon            | Pis  | 25.5  | -    | Tenth_House    |
+| Mercury         | Aqu  | 7.29  | -    | Eighth_House   |
+| Venus           | Aqu  | 10.42 | -    | Eighth_House   |
+| Mars            | Ari  | 28.53 | -    | Eleventh_House |
+| Jupiter         | Vir  | 5.27  | R    | Third_House    |
+| Saturn          | Sco  | 20.74 | -    | Fifth_House    |
+| Uranus          | Can  | 10.17 | R    | First_House    |
+| Neptune         | Lib  | 9.09  | R    | Fourth_House   |
+| Pluto           | Leo  | 5.59  | R    | Second_House   |
+| Mean_Node       | Sco  | 0.13  | R    | Fifth_House    |
+| True_Node       | Lib  | 28.62 | R    | Fifth_House    |
+| Mean_South_Node | Tau  | 0.13  | R    | Eleventh_House |
+| True_South_Node | Ari  | 28.62 | R    | Eleventh_House |
+| Chiron          | Cap  | 21.08 | -    | Seventh_House  |
+| Mean_Lilith     | Cap  | 27.43 | -    | Eighth_House   |
+| Ascendant       | Can  | 12.28 | -    | First_House    |
+| Descendant      | Cap  | 12.28 | -    | Seventh_House  |
+| Medium_Coeli    | Pis  | 29.21 | -    | Tenth_House    |
+| Imum_Coeli      | Vir  | 29.21 | -    | Fourth_House   |
++-----------------+------+-------+------+----------------+
++----------------+------+----------+
+| House          | Sign | Position |
++----------------+------+----------+
+| First_House    | Gem  | 25.1     |
+| Second_House   | Can  | 25.1     |
+| Third_House    | Leo  | 20.75    |
+| Fourth_House   | Vir  | 16.39    |
+| Fifth_House    | Lib  | 16.39    |
+| Sixth_House    | Sco  | 20.75    |
+| Seventh_House  | Sag  | 25.1     |
+| Eighth_House   | Cap  | 25.1     |
+| Ninth_House    | Aqu  | 20.75    |
+| Tenth_House    | Pis  | 16.39    |
+| Eleventh_House | Ari  | 16.39    |
+| Twelfth_House  | Tau  | 20.75    |
++----------------+------+----------+
+----------------------------------------------------------------------
+
+--- Natal Nakshatra Positions (Method: User Boundaries / User Pada Logic) ---
+Ascendant   : Pushya          (Pada 3, Lord: Saturn  ) [Can 12.28°]
+MC          : Point data unavailable.
+Sun         : Purva Bhadrapada (Pada 1, Lord: Jupiter ) [Aqu 20.71°]
+Moon        : Revati          (Pada 3, Lord: Mercury ) [Pis 25.50°]
+Mercury     : Shatabhisha     (Pada 1, Lord: Rahu    ) [Aqu 7.29°]
+Venus       : Shatabhisha     (Pada 2, Lord: Rahu    ) [Aqu 10.42°]
+Mars        : Krittika        (Pada 1, Lord: Sun     ) [Ari 28.53°]
+Jupiter     : Uttara Phalguni (Pada 3, Lord: Sun     ) [Vir 5.27° (R)]
+Saturn      : Jyeshtha        (Pada 2, Lord: Mercury ) [Sco 20.74°]
+Uranus      : Pushya          (Pada 3, Lord: Saturn  ) [Can 10.17° (R)]
+Neptune     : Swati           (Pada 1, Lord: Rahu    ) [Lib 9.09° (R)]
+Pluto       : Magha           (Pada 2, Lord: Ketu    ) [Leo 5.59° (R)]
+True Node   : Vishakha        (Pada 3, Lord: Jupiter ) [Lib 28.62° (R)]
+True S. Node: Krittika        (Pada 1, Lord: Sun     ) [Ari 28.62° (R)]
+---------------------------------------------------------------------------
+
+==============================
+   STANDARD TRANSIT CHART REPORT: Transit Chart (Apr 3, 2025)
+   (Using Sripathi Houses, LAHIRI Ayanamsa)
+==============================
+
++- Kerykeion report for Transit Chart (Apr 3, 2025) -+
++----------+-------+--------------+-----------+----------+
+| Date     | Time  | Location     | Longitude | Latitude |
++----------+-------+--------------+-----------+----------+
+| 3/4/2025 | 13:30 | New York, US | -74.006   | 40.7128  |
++----------+-------+--------------+-----------+----------+
++-----------------+------+-------+------+----------------+
+| Planet          | Sign | Pos.  | Ret. | House          |
++-----------------+------+-------+------+----------------+
+| Sun             | Pis  | 20.0  | -    | Tenth_House    |
+| Moon            | Gem  | 2.69  | -    | Twelfth_House  |
+| Mercury         | Pis  | 3.26  | R    | Ninth_House    |
+| Venus           | Pis  | 2.17  | R    | Ninth_House    |
+| Mars            | Can  | 0.3   | -    | First_House    |
+| Jupiter         | Tau  | 22.2  | -    | Twelfth_House  |
+| Saturn          | Pis  | 0.61  | -    | Ninth_House    |
+| Uranus          | Tau  | 0.67  | -    | Eleventh_House |
+| Neptune         | Pis  | 5.95  | -    | Ninth_House    |
+| Pluto           | Cap  | 9.38  | -    | Seventh_House  |
+| Mean_Node       | Pis  | 2.38  | R    | Ninth_House    |
+| True_Node       | Pis  | 3.09  | R    | Ninth_House    |
+| Mean_South_Node | Vir  | 2.38  | R    | Third_House    |
+| True_South_Node | Vir  | 3.09  | R    | Third_House    |
+| Chiron          | Pis  | 28.25 | -    | Tenth_House    |
+| Mean_Lilith     | Lib  | 6.65  | -    | Fourth_House   |
+| Ascendant       | Can  | 11.34 | -    | First_House    |
+| Descendant      | Cap  | 11.34 | -    | Seventh_House  |
+| Medium_Coeli    | Pis  | 28.27 | -    | Tenth_House    |
+| Imum_Coeli      | Vir  | 28.27 | -    | Fourth_House   |
++-----------------+------+-------+------+----------------+
++----------------+------+----------+
+| House          | Sign | Position |
++----------------+------+----------+
+| First_House    | Gem  | 24.16    |
+| Second_House   | Can  | 24.16    |
+| Third_House    | Leo  | 19.8     |
+| Fourth_House   | Vir  | 15.45    |
+| Fifth_House    | Lib  | 15.45    |
+| Sixth_House    | Sco  | 19.8     |
+| Seventh_House  | Sag  | 24.16    |
+| Eighth_House   | Cap  | 24.16    |
+| Ninth_House    | Aqu  | 19.8     |
+| Tenth_House    | Pis  | 15.45    |
+| Eleventh_House | Ari  | 15.45    |
+| Twelfth_House  | Tau  | 19.8     |
++----------------+------+----------+
+----------------------------------------------------------------------
+
+--- Transit Nakshatra Positions (Method: User Boundaries / User Pada Logic) ---
+Ascendant   : Pushya          (Pada 3, Lord: Saturn  ) [Can 11.34°]
+MC          : Point data unavailable.
+Sun         : Revati          (Pada 1, Lord: Mercury ) [Pis 20.00°]
+Moon        : Mrigashira      (Pada 3, Lord: Mars    ) [Gem 2.69°]
+Mercury     : Purva Bhadrapada (Pada 4, Lord: Jupiter ) [Pis 3.26° (R)]
+Venus       : Purva Bhadrapada (Pada 4, Lord: Jupiter ) [Pis 2.17° (R)]
+Mars        : Punarvasu       (Pada 4, Lord: Jupiter ) [Can 0.30°]
+Jupiter     : Rohini          (Pada 4, Lord: Moon    ) [Tau 22.20°]
+Saturn      : Purva Bhadrapada (Pada 4, Lord: Jupiter ) [Pis 0.61°]
+Uranus      : Krittika        (Pada 2, Lord: Sun     ) [Tau 0.67°]
+Neptune     : Uttara Bhadrapada (Pada 1, Lord: Saturn  ) [Pis 5.95°]
+Pluto       : Uttara Ashadha  (Pada 4, Lord: Sun     ) [Cap 9.38°]
+True Node   : Purva Bhadrapada (Pada 4, Lord: Jupiter ) [Pis 3.09° (R)]
+True S. Node: Uttara Phalguni (Pada 2, Lord: Sun     ) [Vir 3.09° (R)]
+---------------------------------------------------------------------------
+
+==============================
+   DERIVED HOUSE LORDS
+(Based on Standard Report Cusps)
+==============================
+
+--- Natal House Lords ---
+House        Cusp Sign  House Lord
+----------------------------------
+First        Gem        Mercury   
+Second       Can        Moon      
+Third        Leo        Sun       
+Fourth       Vir        Mercury   
+Fifth        Lib        Venus     
+Sixth        Sco        Mars      
+Seventh      Sag        Jupiter   
+Eighth       Cap        Saturn    
+Ninth        Aqu        Saturn    
+Tenth        Pis        Jupiter   
+Eleventh     Ari        Mars      
+Twelfth      Tau        Venus     
+----------------------------------
+
+--- Transit House Lords ---
+House        Cusp Sign  House Lord
+----------------------------------
+First        Gem        Mercury   
+Second       Can        Moon      
+Third        Leo        Sun       
+Fourth       Vir        Mercury   
+Fifth        Lib        Venus     
+Sixth        Sco        Mars      
+Seventh      Sag        Jupiter   
+Eighth       Cap        Saturn    
+Ninth        Aqu        Saturn    
+Tenth        Pis        Jupiter   
+Eleventh     Ari        Mars      
+Twelfth      Tau        Venus     
+----------------------------------
+==============================
+
+==============================
+   TRANSIT ASPECTS TO NATAL (Using Custom Speed Calc + Timing)
+   (Max Orb: 5.0°, Aspects: [0, 60, 90, 120, 180])
+==============================
+
+==============================
+      TRANSIT PLANETARY SPEEDS
+==============================
+Planet       Speed (°/day)   Status   Classification 
+-------------------------------------------------------
+Sun          +0.9853                  Normal         
+Moon         +13.7380                 Fast           
+Mercury      -0.2992                  Slow Rx        
+Venus        -0.3542                  Slow Rx        
+Mars         +0.3458                  Slow           
+Jupiter      +0.1610                  Fast           
+Saturn       +0.1187                  Fast           
+Uranus       +0.0474                  Normal         
+Neptune      +0.0369                  Normal         
+Pluto        +0.0141                  Normal         
+True Node    -0.0152                  Slow Rx        
+True S. Node -0.0152                  Slow Rx        
+-------------------------------------------------------
+
+Transit Planet  Aspect     Natal Planet    Orb     Status     Est. Exact     
+---------------------------------------------------------------------------
+Pluto           Square     Neptune         0.29°   Separating 03/13 12:00 EDT
+Neptune         Opposite   Jupiter         0.68°   Separating 03/15 22:40 EDT
+Sun             Trine      Saturn          0.74°   Applying   04/04 03:33 EDT
+Pluto           Opposite   Uranus          0.79°   Applying   05/29 12:46 EDT
+Ascendant       Conjunct   Ascendant       0.94°   Applying   N/A (Asc)      
+Ascendant       Conjunct   Uranus          1.16°   Separating N/A (Asc)      
+Jupiter         Opposite   Saturn          1.46°   Separating 03/25 07:51 EDT
+Jupiter         Square     Sun             1.49°   Separating 03/25 03:19 EDT
+Mars            Sextile    Mars            1.77°   Separating 03/29 06:17 EDT
+Saturn          Trine      True Node       1.98°   Separating 03/17 16:47 EDT
+Mercury         Opposite   Jupiter         2.01°   Separating 03/27 16:32 EDT
+Uranus          Opposite   True Node       2.05°   Separating 02/19 02:49 EST
+Uranus          Conjunct   Mars            2.14°   Separating 02/17 03:16 EST
+True Node       Opposite   Jupiter         2.17°   Separating 11/11 16:17 EST
+Pluto           Opposite   Ascendant       2.90°   Applying   10/26 02:25 EDT
+Venus           Opposite   Jupiter         3.10°   Separating 03/25 15:41 EDT
+Jupiter         Sextile    Moon            3.30°   Applying   04/23 21:08 EDT
+Venus           Trine      True Node       3.55°   Applying   04/13 09:43 EDT
+Pluto           Trine      Jupiter         4.12°   Separating 06/14 19:17 EDT
+True Node       Trine      True Node       4.47°   Applying   01/21 11:42 EST
+Moon            Trine      Mercury         4.60°   Applying   17:32 EDT      
+Mercury         Trine      True Node       4.64°   Applying   04/18 21:17 EDT
+Saturn          Opposite   Jupiter         4.66°   Applying   05/12 15:44 EDT
+Mars            Square     Moon            4.81°   Separating 03/20 11:45 EDT
+---------------------------------------------------------------------------
+
+Script finished.
