@@ -1,0 +1,383 @@
+# -*- coding: utf-8 -*-
+from kerykeion import AstrologicalSubject, Report
+from datetime import datetime, timezone, timedelta
+import math
+import pprint
+import inspect
+
+# --- Configuration (Combined) ---
+location_city = "New York"; location_nation = "US"; location_latitude = 40.7128; location_longitude = -74.0060; location_timezone_str = "America/New_York"
+natal_name = "Natal Chart (Mar 4, 1957)"; natal_year = 1957; natal_month = 3; natal_day = 4; natal_hour_local = 8; natal_minute_local = 30
+transit_name = "Transit Chart (Mar 31, 2025)"; transit_year = 2025; transit_month = 3; transit_day = 31; transit_hour_local = 12; transit_minute_local = 0 # Corrected Day back
+ayanamsa = "LAHIRI"; house_system_identifier = "S"; zodiac_type = "Sidereal"
+house_system_names = { "P": "Placidus", "K": "Koch", "R": "Regiomontanus", "C": "Campanus", "E": "Equal", "W": "Whole Sign", "X": "Axial Rotation System", "H": "Horizontal System", "T": "Polich/Page (Topocentric)", "B": "Alcabitus", "M": "Morinus", "U": "Krusinski-Pisa-Goelzer", "S": "Sripathi" }
+house_system_name = house_system_names.get(house_system_identifier, f"Unknown ({house_system_identifier})")
+KERYKEION_ONLINE_MODE = False # Set to True if Swiss Ephemeris is not local
+
+# --- Aspect Configuration ---
+ASPECTS_TO_CHECK = [0, 60, 90, 120, 180]
+ASPECT_NAMES = { 0: "Conjunct", 60: "Sextile", 90: "Square", 120: "Trine", 180: "Opposite"}
+MAX_ASPECT_ORB = 5.0
+
+# --- Planet/Point Configuration (Consistent) ---
+# Planets/Points to use in the final aspect calculation table
+PLANETS_FOR_ASPECTS = [
+    "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter",
+    "Saturn", "Uranus", "Neptune", "Pluto", "Ascendant",
+    "True Node"
+]
+# Bodies to calculate custom speed for (must exist as attributes in Kerykeion Subject)
+EXPECTED_BODIES_FOR_SPEED = [
+    'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn',
+    'uranus', 'neptune', 'pluto', 'mean_node', 'true_node',
+]
+# Comprehensive map for accessing attributes and naming
+PLANET_ATTRIBUTE_MAP = {
+    'sun': 'Sun', 'moon': 'Moon', 'mercury': 'Mercury', 'venus': 'Venus',
+    'mars': 'Mars', 'jupiter': 'Jupiter', 'saturn': 'Saturn', 'uranus': 'Uranus',
+    'neptune': 'Neptune', 'pluto': 'Pluto', 'mean_node': 'Mean_Node',
+    'true_node': 'True_Node', 'chiron': 'Chiron', 'mean_lilith': 'Mean_Lilith',
+    'ascendant': 'Ascendant', 'mc': 'MC',
+    'true_south_node': 'True S. Node'
+}
+# Points to display in the Nakshatra/Pada Lord list
+POINTS_FOR_NAKSHATRA_DISPLAY = [
+    "Ascendant", "MC", "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter",
+    "Saturn", "Uranus", "Neptune", "Pluto", "True Node", "True S. Node"
+]
+
+SIGN_START_LONGITUDES = { "Ari": 0.0, "Tau": 30.0, "Gem": 60.0, "Can": 90.0, "Leo": 120.0, "Vir": 150.0, "Lib": 180.0, "Sco": 210.0, "Sag": 240.0, "Cap": 270.0, "Aqu": 300.0, "Pis": 330.0 }
+SIGN_NAMES = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"]
+
+# --- Vedic Sign Rulers ---
+VEDIC_SIGN_RULERS = {
+    "Ari": "Mars", "Tau": "Venus", "Gem": "Mercury", "Can": "Moon",
+    "Leo": "Sun", "Vir": "Mercury", "Lib": "Venus", "Sco": "Mars",
+    "Sag": "Jupiter", "Cap": "Saturn", "Aqu": "Saturn",
+    "Pis": "Jupiter", "N/A": "N/A"
+}
+
+# --- Timezone Helper Function ---
+def get_utc_datetime(year, month, day, hour, minute, tz_str):
+    """Converts local time to UTC using zoneinfo or pytz."""
+    try: from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+    except ImportError: print("Warning: zoneinfo module not available (Python 3.9+). Trying pytz."); import pytz
+    try:
+        if 'ZoneInfo' in locals():
+            local_tz = ZoneInfo(tz_str)
+            local_dt = datetime(year, month, day, hour, minute, tzinfo=local_tz)
+            utc_dt = local_dt.astimezone(timezone.utc)
+            source = "zoneinfo"
+        else:
+            local_tz = pytz.timezone(tz_str)
+            local_dt = datetime(year, month, day, hour, minute)
+            local_dt_aware = local_tz.localize(local_dt)
+            utc_dt = local_dt_aware.astimezone(pytz.utc)
+            source = "pytz"
+        print(f"Info: Using {source} for {year}-{month}-{day}. Local: {local_dt.strftime('%Y-%m-%d %H:%M %Z%z') if hasattr(local_dt,'tzinfo') else local_dt_aware.strftime('%Y-%m-%d %H:%M %Z%z')}, UTC: {utc_dt.strftime('%Y-%m-%d %H:%M %Z')}")
+        return utc_dt
+    except Exception as e:
+        print(f"ERROR: Failed to process time for {year}-{month}-{day} with timezone '{tz_str}'. Error: {e}")
+        return None
+
+# --- NAKSHATRA & PADA DATA AND FUNCTIONS ---
+NAKSHATRA_BOUNDARIES = [ # Simplified version without weights/trends
+    {"Name": "Ashwini", "Start": 0.0, "End": 13.3333, "Ruler": "Ketu"},
+    {"Name": "Bharani", "Start": 13.3333, "End": 26.6667, "Ruler": "Venus"},
+    {"Name": "Krittika", "Start": 26.6667, "End": 40.0, "Ruler": "Sun"},
+    {"Name": "Rohini", "Start": 40.0, "End": 53.3333, "Ruler": "Moon"},
+    {"Name": "Mrigashira", "Start": 53.3333, "End": 66.6667, "Ruler": "Mars"},
+    {"Name": "Ardra", "Start": 66.6667, "End": 80.0, "Ruler": "Rahu"},
+    {"Name": "Punarvasu", "Start": 80.0, "End": 93.3333, "Ruler": "Jupiter"},
+    {"Name": "Pushya", "Start": 93.3333, "End": 106.6667, "Ruler": "Saturn"},
+    {"Name": "Ashlesha", "Start": 106.6667, "End": 120.0, "Ruler": "Mercury"},
+    {"Name": "Magha", "Start": 120.0, "End": 133.3333, "Ruler": "Ketu"},
+    {"Name": "Purva Phalguni", "Start": 133.3333, "End": 146.6667, "Ruler": "Venus"},
+    {"Name": "Uttara Phalguni", "Start": 146.6667, "End": 160.0, "Ruler": "Sun"},
+    {"Name": "Hasta", "Start": 160.0, "End": 173.3333, "Ruler": "Moon"},
+    {"Name": "Chitra", "Start": 173.3333, "End": 186.6667, "Ruler": "Mars"},
+    {"Name": "Swati", "Start": 186.6667, "End": 200.0, "Ruler": "Rahu"},
+    {"Name": "Vishakha", "Start": 200.0, "End": 213.3333, "Ruler": "Jupiter"},
+    {"Name": "Anuradha", "Start": 213.3333, "End": 226.6667, "Ruler": "Saturn"},
+    {"Name": "Jyeshtha", "Start": 226.6667, "End": 240.0, "Ruler": "Mercury"},
+    {"Name": "Mula", "Start": 240.0, "End": 253.3333, "Ruler": "Ketu"},
+    {"Name": "Purva Ashadha", "Start": 253.3333, "End": 266.6667, "Ruler": "Venus"},
+    {"Name": "Uttara Ashadha", "Start": 266.6667, "End": 280.0, "Ruler": "Sun"},
+    {"Name": "Shravana", "Start": 280.0, "End": 293.3333, "Ruler": "Moon"},
+    {"Name": "Dhanishtha", "Start": 293.3333, "End": 306.6667, "Ruler": "Mars"},
+    {"Name": "Shatabhisha", "Start": 306.6667, "End": 320.0, "Ruler": "Rahu"},
+    {"Name": "Purva Bhadrapada", "Start": 320.0, "End": 333.3333, "Ruler": "Jupiter"},
+    {"Name": "Uttara Bhadrapada", "Start": 333.3333, "End": 346.6667, "Ruler": "Saturn"},
+    {"Name": "Revati", "Start": 346.6667, "End": 360.0, "Ruler": "Mercury"}
+]
+STANDARD_NAKSHATRA_SPAN = 360.0 / 27.0
+STANDARD_PADA_SPAN = STANDARD_NAKSHATRA_SPAN / 4.0
+EPSILON = 1e-9
+
+def calculate_pada_lord(absolute_longitude):
+    """Calculates the Navamsa Lord (Pada Lord) for a given longitude."""
+    if absolute_longitude is None or not isinstance(absolute_longitude, (int, float)): return "N/A"
+    pada_index = math.floor((absolute_longitude + EPSILON) / STANDARD_PADA_SPAN) % 108
+    navamsa_sign_index = pada_index % 12
+    navamsa_sign = SIGN_NAMES[navamsa_sign_index]
+    return VEDIC_SIGN_RULERS.get(navamsa_sign, "N/A")
+
+def calculate_nakshatra_info(absolute_longitude):
+    """Calculates Nakshatra name, pada number, Nakshatra Lord, and Pada Lord."""
+    default_info = {"name": "N/A", "pada": "N/A", "nak_lord": "N/A", "pada_lord": "N/A"}
+    if not NAKSHATRA_BOUNDARIES: return default_info
+    if absolute_longitude is None or not isinstance(absolute_longitude, (int, float)):
+        pada_lord_fallback = calculate_pada_lord(absolute_longitude) if isinstance(absolute_longitude, (int, float)) else "N/A"
+        return {"name": "Invalid Lon", "pada": "N/A", "nak_lord": "N/A", "pada_lord": pada_lord_fallback}
+
+    longitude_norm = (absolute_longitude + EPSILON) % 360.0
+    pada_lord = calculate_pada_lord(absolute_longitude)
+
+    for nak_info in NAKSHATRA_BOUNDARIES:
+        nak_start = nak_info["Start"]; nak_end = nak_info["End"]
+        if nak_start <= longitude_norm < nak_end:
+            degrees_into_nakshatra = longitude_norm - nak_start
+            pada_num_calc = (degrees_into_nakshatra + EPSILON) / STANDARD_PADA_SPAN
+            pada_num = int(math.floor(pada_num_calc)) + 1; pada_num = max(1, min(4, pada_num))
+            return {"name": nak_info["Name"], "pada": pada_num, "nak_lord": nak_info.get("Ruler", "N/A"), "pada_lord": pada_lord}
+
+    # Handle 360.0 edge case (falls into last pada of last nakshatra)
+    if abs(longitude_norm) < EPSILON or abs(longitude_norm - 360.0) < EPSILON:
+         if NAKSHATRA_BOUNDARIES:
+             last_nak = NAKSHATRA_BOUNDARIES[-1]
+             return {"name": last_nak["Name"], "pada": 4, "nak_lord": last_nak.get("Ruler", "N/A"), "pada_lord": pada_lord}
+
+    print(f"WARNING: Longitude {longitude_norm:.4f} (Orig: {absolute_longitude:.4f}) did not fall into Nakshatra range.")
+    return {"name": "Not Found", "pada": "N/A", "nak_lord": "N/A", "pada_lord": pada_lord}
+
+def print_nakshatras(subject: AstrologicalSubject, chart_type: str):
+    """Prints Nakshatra and Pada Lord info for key points."""
+    if not subject: print(f"Cannot print Nakshatras for {chart_type}, subject is None."); return
+    if subject.zodiac_type != "Sidereal": print(f"Warning: Nakshatras require Sidereal zodiac. Current type: {subject.zodiac_type}")
+    print(f"\n--- {chart_type} Nakshatra / Pada Lord Positions ---")
+    print(f"{'Point':<12} {'Nakshatra':<15} {'Pada':<4} {'Nak Lord':<8} {'Pada Lord':<8} {'Position'}")
+    print("-" * 75)
+    # Use POINTS_FOR_NAKSHATRA_DISPLAY list
+    for point_key in POINTS_FOR_NAKSHATRA_DISPLAY:
+        attr_name = next((attr for attr, key in PLANET_ATTRIBUTE_MAP.items() if key == point_key), None)
+        if not attr_name: # Should not happen if map is complete
+            print(f"{point_key:<12} Attribute map error")
+            continue
+
+        nak_name, nak_pada, nak_lord, pada_lord = "N/A", "N/A", "N/A", "N/A"
+        sign, pos_in_sign_str, retrograde = "N/A", "N/A", ""
+        output_str = f"{point_key:<12}: Point data unavailable."
+        try:
+            point_obj = getattr(subject, attr_name, None)
+            if point_obj and hasattr(point_obj, 'position') and hasattr(point_obj, 'sign'):
+                pos_in_sign = point_obj.position; sign = point_obj.sign; pos_in_sign_str = f"{pos_in_sign:.2f}"
+                if hasattr(point_obj, 'retrograde') and point_obj.retrograde: retrograde = " (R)"
+                sign_start_lon = SIGN_START_LONGITUDES.get(sign, None)
+                if sign_start_lon is not None:
+                    absolute_longitude = sign_start_lon + pos_in_sign
+                    nak_full_info = calculate_nakshatra_info(absolute_longitude)
+                    nak_name = nak_full_info.get('name', 'N/A'); nak_pada = nak_full_info.get('pada', 'N/A')
+                    nak_lord = nak_full_info.get('nak_lord', 'N/A'); pada_lord = nak_full_info.get('pada_lord', 'N/A')
+                    output_str = f"{point_key:<12} {nak_name:<15} {nak_pada:<4} {nak_lord:<8} {pada_lord:<8} [{sign} {pos_in_sign_str}°{retrograde}]"
+                else: output_str = f"{point_key:<12} {'Unknown Sign':<15} {'N/A':<4} {'N/A':<8} {'N/A':<8} [{sign} {pos_in_sign_str}°{retrograde}]"
+            elif point_obj: output_str = f"{point_key:<12} {'Data Missing':<15} {'N/A':<4} {'N/A':<8} {'N/A':<8} [Pos/Sign N/A]"
+            # Handle case where attribute just doesn't exist (e.g., MC in Sripathi)
+            elif not point_obj and attr_name == 'mc' and subject.houses_system_identifier == 'S':
+                 output_str = f"{point_key:<12} {'N/A (Sripathi)':<15} {'':<4} {'':<8} {'':<8}"
+            elif not point_obj: output_str = f"{point_key:<12} Attribute Error"
+
+        except Exception as e: print(f"Error processing Nakshatra/Pada for {point_key} ({attr_name}): {e}"); output_str=f"{point_key:<12}: Error processing data."
+        print(output_str)
+    print("-" * 75)
+
+# --- House Lord Printing Function (With Cusp Nak/Pada Lords) ---
+def print_house_lords(subject: AstrologicalSubject, chart_type: str):
+    """Calculates and prints lords for each house cusp."""
+    if not subject: print(f"\nCannot print House Lords for {chart_type}, subject is None."); return
+    if not hasattr(subject, 'houses_list') or not subject.houses_list or len(subject.houses_list) < 12:
+        print(f"\nHouse cusp data not available or incomplete for {chart_type} ({subject.name}). Cannot print House Lords.")
+        return
+
+    print(f"\n--- {chart_type} House Cusps: Lords (Sign, Nakshatra, Pada) ---")
+    print(f"{'House':<5} {'Sign':<5} {'Degree':<7} {'House Lord':<8} {'Nakshatra':<15} {'Nak Lord':<8} {'Pada Lord':<8}")
+    print("-" * 75)
+    try:
+        for i, cusp in enumerate(subject.houses_list):
+            house_num = i + 1
+            sign_on_cusp, degree_str, house_lord, nak_name, nak_lord, pada_lord = "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"
+            if hasattr(cusp, 'sign') and hasattr(cusp, 'position') and hasattr(cusp, 'lon'):
+                sign_on_cusp = cusp.sign; degree_str = f"{cusp.position:.2f}"
+                house_lord = VEDIC_SIGN_RULERS.get(sign_on_cusp, "N/A")
+                cusp_lon = cusp.lon # Use absolute longitude
+                nak_full_info = calculate_nakshatra_info(cusp_lon)
+                nak_name = nak_full_info.get('name', 'N/A'); nak_lord = nak_full_info.get('nak_lord', 'N/A'); pada_lord = nak_full_info.get('pada_lord', 'N/A')
+            else: sign_on_cusp = getattr(cusp, 'sign', 'N/A'); house_lord = VEDIC_SIGN_RULERS.get(sign_on_cusp, "N/A") if sign_on_cusp != "N/A" else "N/A"; nak_name = "Data Missing"
+            print(f"{house_num:<5} {sign_on_cusp:<5} {degree_str:<7} {house_lord:<8} {nak_name:<15} {nak_lord:<8} {pada_lord:<8}")
+    except Exception as e: print(f"Error processing house lords for {chart_type}: {e}"); import traceback; traceback.print_exc()
+    print("-" * 75)
+
+# --- CUSTOM SPEED CALCULATION FUNCTION ---
+def calculate_custom_speeds(subject_t0: AstrologicalSubject):
+    """Calculates approximate speeds using a 1-day interval."""
+    # ... (function remains the same as previous version) ...
+    if not subject_t0: return None
+    try:
+        planets_t0 = {}; print(f"\nExtracting planet data for custom speed calculation (t0)...")
+        for attr_name in EXPECTED_BODIES_FOR_SPEED:
+            if hasattr(subject_t0, attr_name): planet_obj = getattr(subject_t0, attr_name); dict_key = PLANET_ATTRIBUTE_MAP.get(attr_name, attr_name);
+            if planet_obj is not None and hasattr(planet_obj, 'position'): planets_t0[dict_key] = planet_obj
+        if not planets_t0: print("ERROR (speed): Failed to retrieve valid t0 planet data."); return None
+        if not all(hasattr(subject_t0, attr) for attr in ['year', 'month', 'day', 'hour', 'minute']): print("ERROR (speed): subject_t0 missing time attributes."); return None
+        t0_dt_utc = datetime(subject_t0.year, subject_t0.month, subject_t0.day, subject_t0.hour, subject_t0.minute, 0, tzinfo=timezone.utc)
+        t1_dt_utc = t0_dt_utc + timedelta(days=1); print(f"Calculating positions for speed check at t1: {t1_dt_utc.strftime('%Y-%m-%d %H:%M')} UTC")
+        subject_t1 = AstrologicalSubject( subject_t0.name + " +1d", t1_dt_utc.year, t1_dt_utc.month, t1_dt_utc.day, t1_dt_utc.hour, t1_dt_utc.minute, city=getattr(subject_t0, 'city', None), nation=getattr(subject_t0, 'nation', None), lng=getattr(subject_t0, 'lng', None), lat=getattr(subject_t0, 'lat', None), tz_str=getattr(subject_t0, 'tz_str', None), zodiac_type=getattr(subject_t0, 'zodiac_type', 'Tropical'), sidereal_mode=getattr(subject_t0, 'sidereal_mode', 'LAHIRI'), houses_system_identifier=getattr(subject_t0, 'houses_system_identifier', 'P'), online=KERYKEION_ONLINE_MODE )
+        planets_t1 = {}
+        for attr_name in EXPECTED_BODIES_FOR_SPEED:
+             if hasattr(subject_t1, attr_name): planet_obj = getattr(subject_t1, attr_name); dict_key = PLANET_ATTRIBUTE_MAP.get(attr_name, attr_name);
+             if planet_obj is not None and hasattr(planet_obj, 'position'): planets_t1[dict_key] = planet_obj
+        if not planets_t1: print("ERROR (speed): Failed to retrieve valid t1 planet data."); del subject_t1; return None
+        calculated_speeds = {}; print("\nCalculating custom speeds (deg/day)...")
+        for planet_key, planet_t0_obj in planets_t0.items():
+            planet_t1_obj = planets_t1.get(planet_key);
+            if not planet_t1_obj: continue
+            lon0 = getattr(planet_t0_obj, 'position', None); lon1 = getattr(planet_t1_obj, 'position', None)
+            if lon0 is None or lon1 is None or not isinstance(lon0, (int, float)) or not isinstance(lon1, (int, float)): continue
+            delta_lon = lon1 - lon0;
+            if delta_lon > 180: delta_lon -= 360.0
+            elif delta_lon < -180: delta_lon += 360.0
+            calculated_speeds[planet_key] = delta_lon
+        del subject_t1
+        if not calculated_speeds: print("\nERROR (speed): No speeds were calculated."); return None
+        print("Custom speed calculation finished.")
+        return calculated_speeds
+    except Exception as e: print(f"ERROR during custom speed calculation: {e}"); import traceback; traceback.print_exc(); return None
+
+# --- ASPECT CALCULATION FUNCTION (Includes All Lords) ---
+def print_manual_transit_aspects(natal_subject: AstrologicalSubject, transit_subject: AstrologicalSubject, aspects_list: list, max_orb: float, planets_for_aspects: list):
+    """Calculates and prints aspects including speeds and lords."""
+    if not natal_subject or not transit_subject: print("\nCannot calculate transit aspects."); return
+    print("\n" + "="*30); print(f"   TRANSIT ASPECTS TO NATAL (Using Custom Speed Calc)"); print(f"   (Max Orb: {max_orb:.1f}°, Aspects: {aspects_list})"); print("="*30)
+
+    calculated_transit_speeds = calculate_custom_speeds(transit_subject)
+    if not calculated_transit_speeds: print("ERROR: Failed speed calculation. Aborting aspects."); return
+
+    # Print Speed Summary
+    print("\n--- Calculated Transit Speeds (Custom, deg/day) ---")
+    speed_display_order = [PLANET_ATTRIBUTE_MAP.get(attr, attr) for attr in EXPECTED_BODIES_FOR_SPEED]; print(f"{'Planet':<15} {'Speed':<12} {'Status'}"); print("-" * 40)
+    displayed_count = 0
+    for planet_key in speed_display_order:
+         if planet_key in calculated_transit_speeds: speed = calculated_transit_speeds[planet_key]; status = "Retrograde" if speed < 0 else "Direct"; print(f"{planet_key:<15} {speed:+.4f}   ({status})"); displayed_count += 1
+    if displayed_count == 0: print("No speeds were available to display.");
+    print("-" * 40)
+
+    # --- Prepare Natal and Transit Planet Data (Including Nak/Pada Lords) ---
+    natal_planets = {} # {planet_key: {'lon': abs_longitude, 'nak_lord': lord, 'pada_lord': lord}}
+    transit_planets = {} # {planet_key: {'lon': abs_longitude, 'speed': custom_speed, 'nak_lord': lord, 'pada_lord': lord}}
+    aspects_found = []
+
+    print("\nExtracting planet data for aspect calculation (including Nak/Pada Lords)...")
+    # Populate Natal Data
+    for planet_key in planets_for_aspects:
+        attr_name = next((attr for attr, key in PLANET_ATTRIBUTE_MAP.items() if key == planet_key), None);
+        if not attr_name: continue
+        try:
+            n_planet = getattr(natal_subject, attr_name, None)
+            if n_planet and hasattr(n_planet, 'sign') and hasattr(n_planet, 'position'):
+                sign_start_lon = SIGN_START_LONGITUDES.get(n_planet.sign)
+                if sign_start_lon is not None:
+                    abs_lon = (sign_start_lon + n_planet.position) % 360
+                    nak_full_info = calculate_nakshatra_info(abs_lon)
+                    natal_planets[planet_key] = {'lon': abs_lon, 'nak_lord': nak_full_info.get('nak_lord', 'N/A'), 'pada_lord': nak_full_info.get('pada_lord', 'N/A')}
+        except Exception as e: print(f"  - Error getting natal {planet_key}: {e}")
+
+    # Populate Transit Data
+    for planet_key in planets_for_aspects:
+        attr_name = next((attr for attr, key in PLANET_ATTRIBUTE_MAP.items() if key == planet_key), None);
+        if not attr_name: continue
+        try:
+            t_planet = getattr(transit_subject, attr_name, None)
+            if t_planet and hasattr(t_planet, 'sign') and hasattr(t_planet, 'position'):
+                sign_start_lon = SIGN_START_LONGITUDES.get(t_planet.sign)
+                if sign_start_lon is not None:
+                    abs_lon = (sign_start_lon + t_planet.position) % 360
+                    custom_speed = calculated_transit_speeds.get(planet_key)
+                    nak_full_info = calculate_nakshatra_info(abs_lon)
+                    if custom_speed is not None: # Only add if speed exists
+                         transit_planets[planet_key] = {'lon': abs_lon, 'speed': custom_speed, 'nak_lord': nak_full_info.get('nak_lord', 'N/A'), 'pada_lord': nak_full_info.get('pada_lord', 'N/A')}
+        except Exception as e: print(f"  - Error getting transit {planet_key}: {e}")
+
+    if not natal_planets or not transit_planets: print("Error: Insufficient planet data for aspects after filtering."); return
+
+    # --- Calculate Aspects ---
+    for tp_name, tp_data in transit_planets.items():
+        for np_name, np_data in natal_planets.items():
+            tp_lon = tp_data['lon']; tp_speed = tp_data['speed']; tp_nak_lord = tp_data['nak_lord']; tp_pada_lord = tp_data['pada_lord']
+            np_lon = np_data['lon']; np_nak_lord = np_data['nak_lord']; np_pada_lord = np_data['pada_lord']
+            raw_diff = tp_lon - np_lon
+            for aspect_angle in aspects_list:
+                delta = (raw_diff - aspect_angle + 540) % 360 - 180; orb = abs(delta)
+                if orb <= max_orb:
+                    aspect_name = ASPECT_NAMES.get(aspect_angle, f"{aspect_angle}°"); status = "Exact/Stationary";
+                    if abs(tp_speed) > 1e-7: is_applying = (tp_speed > 0 and delta <= 0) or (tp_speed < 0 and delta >= 0); status = "Applying" if is_applying else "Separating"
+                    aspects_found.append({'tp_name': tp_name, 'aspect_name': aspect_name, 'np_name': np_name, 'orb': orb, 'status': status, 'tp_speed': tp_speed, 'tp_nak_lord': tp_nak_lord, 'tp_pada_lord': tp_pada_lord, 'np_nak_lord': np_nak_lord, 'np_pada_lord': np_pada_lord})
+
+    # --- Print Results (Final Expanded Table) ---
+    if not aspects_found: print("\nNo significant aspects found."); return
+    aspects_found.sort(key=lambda x: x['orb'])
+    print(f"\n{'Transit':<10} {'T NakLd':<7} {'T PadLd':<7} {'Aspect':<9} {'Natal':<10} {'N NakLd':<7} {'N PadLd':<7} {'Orb':<7} {'T. Speed':<9} {'Status'}")
+    print("-" * 95)
+    for aspect in aspects_found:
+        orb_str = f"{aspect['orb']:.2f}°"; speed_val = aspect['tp_speed']; speed_str = f"{speed_val:+.3f}"
+        print(f"{aspect['tp_name']:<10} {aspect['tp_nak_lord']:<7} {aspect['tp_pada_lord']:<7} {aspect['aspect_name']:<9} "
+              f"{aspect['np_name']:<10} {aspect['np_nak_lord']:<7} {aspect['np_pada_lord']:<7} {orb_str:<7} {speed_str:<9} {aspect['status']}")
+    print("-" * 95)
+
+# --- MAIN EXECUTION ---
+if __name__ == "__main__":
+    # Calculate UTC Times
+    print("Calculating UTC times...")
+    natal_utc_dt = get_utc_datetime( natal_year, natal_month, natal_day, natal_hour_local, natal_minute_local, location_timezone_str)
+    transit_utc_dt = get_utc_datetime( transit_year, transit_month, transit_day, transit_hour_local, transit_minute_local, location_timezone_str)
+    if not natal_utc_dt or not transit_utc_dt: exit(1)
+
+    # Create Astrological Subjects
+    print("\nCreating AstrologicalSubject instances...")
+    natal_subject = None; transit_subject = None
+    try: natal_subject = AstrologicalSubject( name=natal_name, year=natal_utc_dt.year, month=natal_utc_dt.month, day=natal_utc_dt.day, hour=natal_utc_dt.hour, minute=natal_utc_dt.minute, city=location_city, nation=location_nation, lat=location_latitude, lng=location_longitude, tz_str=location_timezone_str, zodiac_type=zodiac_type, sidereal_mode=ayanamsa, houses_system_identifier=house_system_identifier, online=KERYKEION_ONLINE_MODE); print(f"- Created: {natal_subject.name}")
+    except Exception as e: print(f"Error creating Natal Subject: {e}"); import traceback; traceback.print_exc()
+    try: transit_subject = AstrologicalSubject( name=transit_name, year=transit_utc_dt.year, month=transit_utc_dt.month, day=transit_utc_dt.day, hour=transit_utc_dt.hour, minute=transit_utc_dt.minute, city=location_city, nation=location_nation, lat=location_latitude, lng=location_longitude, tz_str=location_timezone_str, zodiac_type=zodiac_type, sidereal_mode=ayanamsa, houses_system_identifier=house_system_identifier, online=KERYKEION_ONLINE_MODE); print(f"- Created: {transit_subject.name}")
+    except Exception as e: print(f"Error creating Transit Subject: {e}"); import traceback; traceback.print_exc()
+
+    # Generate and Print Reports & Nakshatras & House Lords
+    # The standard Kerykeion report is printed first, followed by our custom details tables.
+    if natal_subject:
+        print("\n" + "="*30 + f"\n   NATAL DETAILS: {natal_name}\n" + "="*30)
+        try:
+            print("--- Kerykeion Standard Report (Natal) ---")
+            natal_report = Report(natal_subject); natal_report.print_report()
+            print("-" * 70)
+            # Custom Details Printed After Standard Report:
+            print_nakshatras(natal_subject, "Natal")
+            print_house_lords(natal_subject, "Natal") # Includes Nak/Pada lords for cusps
+        except Exception as e: print(f"\nError generating Natal details: {e}")
+    else: print("\nSkipping Natal details (Subject creation failed).")
+
+    if transit_subject:
+        print("\n" + "="*30 + f"\n   TRANSIT DETAILS: {transit_name}\n" + "="*30)
+        try:
+            print("--- Kerykeion Standard Report (Transit) ---")
+            transit_report = Report(transit_subject); transit_report.print_report()
+            print("-" * 70)
+            # Custom Details Printed After Standard Report:
+            print_nakshatras(transit_subject, "Transit")
+            print_house_lords(transit_subject, "Transit") # Includes Nak/Pada lords for cusps
+        except Exception as e: print(f"\nError generating Transit details: {e}")
+    else: print("\nSkipping Transit details (Subject creation failed).")
+
+    # Print Transit Aspects (With Speeds and Nak/Pada Lords)
+    if natal_subject and transit_subject:
+        print_manual_transit_aspects(natal_subject, transit_subject, ASPECTS_TO_CHECK, MAX_ASPECT_ORB, PLANETS_FOR_ASPECTS)
+    else:
+        print("\nSkipping Transit Aspect calculation (Natal or Transit subject missing).")
+
+    print("\nScript finished.")
